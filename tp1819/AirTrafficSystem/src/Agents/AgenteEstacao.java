@@ -57,24 +57,33 @@ public class AgenteEstacao extends Agent{
 			ACLMessage resp=null;
 			if(msg != null)
 				resp=msg.createReply();
+			// recebe pedido para descolagem, confirma disponibilidade e aumenta o nr de pistas ocupadas,
+			// reduz lugares ocupados, e respondendo com as coords (para que as coords? VERIFICAR)
 			if (msg != null && msg.getPerformative() == ACLMessage.REQUEST && condMeteo && nrPistasOcupadas < totalPistas) {
 				nrPistasOcupadas++;
 				nrEstOcupados--;
 				resp.setContent(coordX+";"+coordY);
 				resp.setPerformative(ACLMessage.CONFIRM);
 				send(resp);
-			}else if(msg != null && msg.getPerformative() == ACLMessage.REQUEST_WHEN && nrEstOcupados < totalEstacionamentos && condMeteo) {
+			}
+			//  recebe pedido de aterragem e vê disponibilidade para acolher avião
+			else if(msg != null && msg.getPerformative() == ACLMessage.REQUEST_WHEN && nrEstOcupados < totalEstacionamentos && condMeteo) {
 				nrEstOcupados++;
+				// obter coords atuais do aviao e velocidade
 				String[] coordsAviao = msg.getContent().split(";");
 				double aviaoCoordX=Double.parseDouble(coordsAviao[1]);
 				double aviaoCoordY=Double.parseDouble(coordsAviao[2]);
 				double vel=Double.parseDouble(coordsAviao[3]);
 				double distPercorrer=Math.sqrt(((Math.pow((aviaoCoordX - coordX), 2)) + (Math.pow((aviaoCoordY - coordY), 2))));
+				// calcular tempo que demora a chegar
 				adicionaLista(distPercorrer/vel,coordsAviao[0]);
-				resp.setContent(coordX+";"+coordY+";"+zonaAlerta+";"+zonaProtegida+";"+distPercorrer);
+				// informa zona coords do aeroporto, zonas de segurança e distância total a percorrer
+				resp.setContent(coordX +";"+ coordY +";"+ zonaAlerta +";"+ zonaProtegida +";"+ distPercorrer);
 				resp.setPerformative(ACLMessage.AGREE);
 				send(resp);
-			}else if(msg != null && msg.getPerformative() == ACLMessage.PROPOSE && nrPistasOcupadas<totalPistas) {
+			}
+			//
+			else if(msg != null && msg.getPerformative() == ACLMessage.PROPOSE && nrPistasOcupadas<totalPistas) {
 				nrPistasOcupadas++;
 				resp.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
 				double vel=zonaProtegida-10*getVelocidade(msg.getContent());
