@@ -28,7 +28,7 @@ public class AgenteAeronave extends Agent{
 	private boolean alterouVel;
 	private boolean autorizacaoPartida;
 	private boolean autorizacaoChegada;
-	private boolean dentroAP;
+	private boolean dentroAP; // dentro de área protegida
 	private boolean fimViagem;
 	private double velocidade;
 	private double velocidadeMax;
@@ -36,7 +36,7 @@ public class AgenteAeronave extends Agent{
 	private double distPercorrida;
 	private double tempoDecorrido;
 	private double tempoFalta;
-	private List<String> aes;
+	private List<String> aes; // estações entre as quais viajar
 	private int conta;
 	private String name="";
 	
@@ -53,6 +53,7 @@ public class AgenteAeronave extends Agent{
 		} catch (FIPAException fe) {
 			fe.printStackTrace();
 		}
+		// preencher estações entre as quais se deve viajar
 		this.aes=new ArrayList<>();
 		Object[] args = getArguments();
 		if (args != null) {
@@ -100,13 +101,16 @@ public class AgenteAeronave extends Agent{
 			if(velocidade!=0) {
 				coordX=coordX+velocidade*direcaoX;
 				coordY=coordY+velocidade*direcaoY;
+				// informação para interface
 				try {
 					DFAgentDescription d = new DFAgentDescription();
 					ServiceDescription s = new ServiceDescription();
 					s.setType("Interface");
 					d.addServices(s);
+					// procurar interfaces registadas
 					DFAgentDescription[] r = DFService.search(this.myAgent, d);
 					if (r.length > 0) {
+						// enviar mensagem com nome, coordX e coordY para todas as interfaces registadas
 						for (int i = 0; i < r.length; ++i) {
 							DFAgentDescription d2 = r[i];
 							AID p = d2.getName();
@@ -124,13 +128,16 @@ public class AgenteAeronave extends Agent{
 				tempoDecorrido++;
 				tempoFalta=distPercorrer/velocidade;
 				if(alterouDir || alterouVel) {
+					// informar estação seguinte das suas novas condições de viagem
 					try {
 						DFAgentDescription dfd = new DFAgentDescription();
 						ServiceDescription sd = new ServiceDescription();
-						sd.setType(aes.get(conta+1));
+						sd.setType(aes.get(conta+1)); // proxima estação (para a qual se viaja agora)
 						dfd.addServices(sd);
+						// procurar estações registadas com aquele nome (deverá ser apenas 1)
 						DFAgentDescription[] results = DFService.search(this.myAgent, dfd);
 						if (results.length > 0) {
+							// enviar mensagem com nome, tempo decorrido da viagem e tempo que falta para chegar
 							for (int i = 0; i < results.length; ++i) {
 								DFAgentDescription dfd2 = results[i];
 								AID provider = dfd2.getName();

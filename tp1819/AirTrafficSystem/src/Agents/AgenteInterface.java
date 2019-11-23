@@ -74,6 +74,7 @@ public class AgenteInterface extends Agent implements ExampleChart<BubbleChart> 
     private class ReceberCoords extends CyclicBehaviour {
         public void action() {
             ACLMessage msg = receive();
+            // recebe as coordenadas
             if (msg != null && msg.getPerformative() == ACLMessage.INFORM) {
                 String[] coordsAviao = msg.getContent().split(";");
                 // pegar no nome do aviao e substituir os A. AA1 -> 1
