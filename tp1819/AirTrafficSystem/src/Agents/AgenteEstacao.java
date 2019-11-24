@@ -66,7 +66,8 @@ public class AgenteEstacao extends Agent{
 				resp.setPerformative(ACLMessage.CONFIRM);
 				send(resp);
 			}
-			//  recebe pedido de aterragem e vê disponibilidade para acolher avião
+			//  recebe pedido de aterragem no aeroporto de destino
+			// e vê disponibilidade para acolher avião
 			else if(msg != null && msg.getPerformative() == ACLMessage.REQUEST_WHEN && nrEstOcupados < totalEstacionamentos && condMeteo) {
 				nrEstOcupados++;
 				// obter coords atuais do aviao e velocidade
@@ -89,7 +90,10 @@ public class AgenteEstacao extends Agent{
 				double vel=zonaProtegida-10*getVelocidade(msg.getContent());
 				resp.setContent(vel+"");
 				send(resp);
-			}else if(msg != null && msg.getPerformative() == ACLMessage.INFORM) {
+			}
+			// estação de partida recebe mensagem a informar partida
+			// e liberta a pista
+			else if(msg != null && msg.getPerformative() == ACLMessage.INFORM) {
 				String n=msg.getContent();
 				removeLista(n);
 				nrPistasOcupadas--;

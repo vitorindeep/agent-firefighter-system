@@ -168,6 +168,9 @@ public class AgenteAeronave extends Agent{
 			super(a, period);
 		}
 		protected void onTick() {
+			// verifica se já fez tod_o o percurso que lhe linha sido atribuído,
+			// se realmente está parado e se ainda não recebeu autorização de ida
+			// é um pedido para reservar a pista de descolagem
 			if(conta<aes.size()-1 && velocidade==0 && !autorizacaoPartida){
 				try {
 					DFAgentDescription dfd1 = new DFAgentDescription();
@@ -188,7 +191,10 @@ public class AgenteAeronave extends Agent{
 				}catch (FIPAException e) {
 					e.printStackTrace();
 				}
-			}else if(conta<aes.size()-1 && velocidade==0 && !autorizacaoChegada && autorizacaoPartida) {
+			}
+			// pedir para iniciar viagem, ou seja, levantar voo,
+			// com consentimento do aeroporto de destino
+			else if(conta<aes.size()-1 && velocidade==0 && !autorizacaoChegada && autorizacaoPartida) {
 				try {
 					DFAgentDescription dfd3 = new DFAgentDescription();
 					ServiceDescription sd3 = new ServiceDescription();
@@ -209,7 +215,9 @@ public class AgenteAeronave extends Agent{
 				}catch (FIPAException e) {
 					e.printStackTrace();
 				}
-			}else if(conta<aes.size()-1 && velocidade==0 && autorizacaoChegada && autorizacaoPartida) {
+			}
+			// informa descolagem efetuada à estação de partida
+			else if(conta<aes.size()-1 && velocidade==0 && autorizacaoChegada && autorizacaoPartida) {
 				try {
 					DFAgentDescription dfd5 = new DFAgentDescription();
 					ServiceDescription sd5 = new ServiceDescription();
@@ -238,14 +246,17 @@ public class AgenteAeronave extends Agent{
 			super(a, period);
 		}
 		protected void onTick() {
+			// verificar se não está parado
 			if(velocidade!=0){
 				try {
+					// listar em relação à lista de informação de aviões
 					DFAgentDescription dfd = new DFAgentDescription();
 					ServiceDescription sd = new ServiceDescription();
 					sd.setType("Plane");
 					dfd.addServices(sd);
 					DFAgentDescription[] results = DFService.search(this.myAgent, dfd);
 					if (results.length > 0) {
+						// enviar coordenadas atuais e rumo para todos os aviões
 						for (int i = 0; i < results.length; ++i) {
 							DFAgentDescription dfd2 = results[i];
 							AID provider = dfd2.getName();
@@ -266,8 +277,10 @@ public class AgenteAeronave extends Agent{
 	
 	private class ReceberMsg extends CyclicBehaviour {
 		public void action() {
+		    // verificar se já completou percurso. se sim, não interpreta nada
 			if(conta<aes.size()-1) {
 				ACLMessage msg = receive();
+				// receber coords de outros avioes
 				if (msg != null && msg.getPerformative() == ACLMessage.INFORM) {
 					String[] coordsOutro = msg.getContent().split(";");
 					double coordXOutro=Double.parseDouble(coordsOutro[0]);
@@ -277,38 +290,54 @@ public class AgenteAeronave extends Agent{
 					double destYOutro=Double.parseDouble(coordsOutro[6]);
 					double origemXOutro=Double.parseDouble(coordsOutro[7]);
 					double origemYOutro=Double.parseDouble(coordsOutro[8]);
+					// não está na zona protegida do aeroporto, em que não se podem aplicar afastamentos
+                    // mas está perto de outro avião e não devia, portanto tem que se aplicar medidas evasivas
 					if(dist>zonaProtegida && dist<=zonaAlerta) {
 						double dirXOutro=Double.parseDouble(coordsOutro[2]);
 						double dirYOutro=Double.parseDouble(coordsOutro[3]);
 						double ang = Math.acos((direcaoX*dirXOutro+direcaoY*dirYOutro)/((Math.sqrt(dirXOutro*dirXOutro+dirYOutro*dirYOutro))*(Math.sqrt(direcaoX*direcaoX+direcaoY*direcaoY))));
+						// se vêm na mesma linha, fazer um ângulo de 45º para desviar
 						if(origemCoordX==destXOutro && origemCoordY==destYOutro && origemXOutro==destCoordX && origemYOutro==destCoordY) {
 						    double rx = (direcaoX * Math.cos(Math.toRadians(-45))) - (direcaoY * Math.sin(Math.toRadians(-45)));
 						    double ry = (direcaoX * Math.sin(Math.toRadians(-45))) + (direcaoY * Math.cos(Math.toRadians(-45)));
 						    direcaoX = rx;
 						    direcaoY = ry;
 						    alterouDir=true;
-						}else if((ang!=0 && ang!=Math.PI) && (destCoordX!=destXOutro || destCoordY!=destYOutro) && (origemCoordX!=origemXOutro || origemCoordY!=origemYOutro)) {
+						}
+						// se não têm o mesmo destino X e Y
+						else if((ang!=0 && ang!=Math.PI) && (destCoordX!=destXOutro || destCoordY!=destYOutro) && (origemCoordX!=origemXOutro || origemCoordY!=origemYOutro)) {
 							double distOutro=Double.parseDouble(coordsOutro[4]);
 							double passOutro=Double.parseDouble(coordsOutro[9]);
+							//
 							if(distOutro>distPercorrer && velocidade<zonaProtegidaEstacao+zonaProtegidaEstacao/4) {
 								velocidade+=zonaProtegidaEstacao/4;
 								alterouVel=true;
-							} else if(distOutro<distPercorrer && velocidade>zonaProtegidaEstacao-zonaProtegidaEstacao/4){
+							}
+							//
+							else if(distOutro<distPercorrer && velocidade>zonaProtegidaEstacao-zonaProtegidaEstacao/4){
 								velocidade-=zonaProtegidaEstacao/4;
 								alterouVel=true;
-							} else if(passOutro<nrPassageiros && velocidade<zonaProtegidaEstacao+zonaProtegidaEstacao/4) {
+							}
+							//
+							else if(passOutro<nrPassageiros && velocidade<zonaProtegidaEstacao+zonaProtegidaEstacao/4) {
 								velocidade+=zonaProtegidaEstacao/4;
 								alterouVel=true;
-							} else if(passOutro>nrPassageiros && velocidade>zonaProtegidaEstacao-zonaProtegidaEstacao/4){
+							}
+							//
+							else if(passOutro>nrPassageiros && velocidade>zonaProtegidaEstacao-zonaProtegidaEstacao/4){
 								velocidade-=zonaProtegidaEstacao/4;
 								alterouVel=true;
-							} else if(velocidade<zonaProtegidaEstacao+zonaProtegidaEstacao/4){
+							}
+							//
+							else if(velocidade<zonaProtegidaEstacao+zonaProtegidaEstacao/4){
 								Random r = new Random();
 								velocidade+=10 + (20 - 10) * r.nextDouble();
 								alterouVel=true;
 							}
 						}
-					}else if(velocidade!=0 && dist<=zonaProtegida && (destCoordX!=destXOutro || destCoordY!=destYOutro) && (origemCoordX!=origemXOutro || origemCoordY!=origemYOutro)) {
+					}
+					//
+					else if(velocidade!=0 && dist<=zonaProtegida && (destCoordX!=destXOutro || destCoordY!=destYOutro) && (origemCoordX!=origemXOutro || origemCoordY!=origemYOutro)) {
 						System.out.println("Choque entre "+this.myAgent.getLocalName()+ " e "+msg.getSender().getLocalName());
 						doDelete();
 					}
