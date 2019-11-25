@@ -41,22 +41,22 @@ public class Main {
 		aargs3[0]=(double)0.0;
 		aargs3[1]=(double)0.0;
 		aargs3[2]=(boolean)true;
-		a.startAgentInPlatform("AE1", "Agents.AgenteEstacao",aargs3);
+		a.startAgentInPlatform("AE1", "Agents.AgenteCentral",aargs3);
 		Object[] aargs4=new Object[3];
 		aargs4[0]=(double)0.0;
 		aargs4[1]=(double)5000.0;
 		aargs4[2]=(boolean)true;
-		a.startAgentInPlatform("AE2", "Agents.AgenteEstacao",aargs4);
+		a.startAgentInPlatform("AE2", "Agents.AgenteCentral",aargs4);
 		Object[] aargs5=new Object[3];
 		aargs5[0]=(double)4000.0;
 		aargs5[1]=(double)7500.0;
 		aargs5[2]=(boolean)true;
-		a.startAgentInPlatform("AE3", "Agents.AgenteEstacao",aargs5);
+		a.startAgentInPlatform("AE3", "Agents.AgenteCentral",aargs5);
 		Object[] aargs6=new Object[3];
 		aargs6[0]=(double)7500.0;
 		aargs6[1]=(double)2500.0;
 		aargs6[2]=(boolean)true;
-		a.startAgentInPlatform("AE4", "Agents.AgenteEstacao",aargs6);
+		a.startAgentInPlatform("AE4", "Agents.AgenteCentral",aargs6);
 
 		// criar aeronaves (com locais onde podem aterrar maybe???)
 		Object[] aargs1=new Object[3];
