@@ -48,6 +48,7 @@ public class AgenteCentral extends Agent {
 
 	private class Receiver extends CyclicBehaviour {
 		private int fireCount = 0; // count the number of fires solved
+		private List<Fire> fires = new ArrayList<Fire>();
 
 		//
 		private int xOrigin, yOrigin;
@@ -64,10 +65,11 @@ public class AgenteCentral extends Agent {
 					System.out.println("$ Estação: Novo fogo detetado!");
 					this.fireCount++;
 					// extract fire coordinates
-					String[] coordinates = msg.getContent().split(",");
+					String[] coordinates = msg.getContent().split(";");
+					System.out.println("x: " + coordinates[0] + ", y: " + coordinates[1]);
 					int xFire = Integer.parseInt(coordinates[0]);
 					int yFire = Integer.parseInt(coordinates[1]);
-					new Fire(fireCount, xFire, yFire);
+					fires.add( new Fire(fireCount, xFire, yFire) );
 
 					/*
 					// Time to contact all taxis
