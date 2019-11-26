@@ -18,8 +18,8 @@ public class AgenteBombeiro extends Agent {
     private int x, y;
     private boolean active, replenishment;
     // listar em relação à lista de informação de aviões
-    private DFAgentDescription dfd;
-    private ServiceDescription sd;
+    private DFAgentDescription dfdEstacoes, dfdBombeiro;
+    private ServiceDescription sdEstacoes, sdBombeiro;
 
     protected void setup() {
         System.out.println("$ Starting: Bombeiro");
@@ -31,17 +31,31 @@ public class AgenteBombeiro extends Agent {
         // estado inicial
         active = false;
         replenishment = false;
-        // definições de DF
-        dfd = new DFAgentDescription();
-        sd = new ServiceDescription();
-        sd.setType("Estacao");
-        dfd.addServices(sd);
 
         // ler argumentos para criar novo AgenteBombeiro
         Object[] args = getArguments();
         int identificador = (Integer) args[0]; // id único
         int type = (Integer) args[1]; // tipo de bombeiro (1-aeronave, 2-drone, 3-camioes)
         id = "type" + Integer.toString(type) + "id" + Integer.toString(identificador);
+
+        // definições de DF
+        // Para comunicação com estações
+        dfdEstacoes = new DFAgentDescription();
+        sdEstacoes = new ServiceDescription();
+        sdEstacoes.setType("Estacao");
+        dfdEstacoes.addServices(sdEstacoes);
+        // Para comunicação de Estações para mim (bombeiro)
+        dfdBombeiro = new DFAgentDescription();
+        sdBombeiro = new ServiceDescription();
+        sdBombeiro.setType("Bombeiro");
+        sdBombeiro.setName(id);
+        dfdBombeiro.addServices(sdBombeiro);
+
+        try {
+            DFService.register(this, dfdBombeiro);
+        } catch (FIPAException e) {
+            e.printStackTrace();
+        }
 
         // assumir behaviours
         this.addBehaviour(new EnviarCoordsIniciais());
@@ -60,7 +74,7 @@ public class AgenteBombeiro extends Agent {
         public void action() {
             // enviar coordenadas iniciais a todas as Estações (só haverá uma no caso base)
             try {
-                DFAgentDescription[] dfCentrais = DFService.search(this.myAgent, dfd);
+                DFAgentDescription[] dfCentrais = DFService.search(this.myAgent, dfdEstacoes);
                 if (dfCentrais.length > 0) {
                     for (int i = 0; i < dfCentrais.length; ++i) {
                         DFAgentDescription dfd = dfCentrais[i];
@@ -91,7 +105,7 @@ public class AgenteBombeiro extends Agent {
             if(active || replenishment){
                 try {
                     // enviar coordenadas a todas as Estações (só haverá uma no caso base)
-                    DFAgentDescription[] dfCentrais = DFService.search(this.myAgent, dfd);
+                    DFAgentDescription[] dfCentrais = DFService.search(this.myAgent, dfdEstacoes);
                     if (dfCentrais.length > 0) {
                         for (int i = 0; i < dfCentrais.length; ++i) {
                             DFAgentDescription dfd = dfCentrais[i];

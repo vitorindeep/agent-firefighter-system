@@ -13,4 +13,22 @@ public class Bombeiro {
         this.active = active;
         this.replenishment = replenishment;
     }
+
+    public String getId() {
+        return id;
+    }
+
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
+    }
+
+    public boolean isAvailable() {
+        // só disponível quando não está ativamente a combater fogo
+        // e quando não está em reabastecimento
+        return (!active && !replenishment);
+    }
 }

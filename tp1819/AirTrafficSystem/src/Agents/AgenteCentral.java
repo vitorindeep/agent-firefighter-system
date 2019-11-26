@@ -14,21 +14,24 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 
 public class AgenteCentral extends Agent {
+	// listar em relação à lista de informação de aviões
+	private DFAgentDescription dfdEstacoes, dfdBombeiros;
+	private ServiceDescription sdEstacoes, sdBombeiros;
 
 	protected void setup() {
 		System.out.println("$ Starting: Estação");
 		super.setup();
 
-		// register Estacao to DF
-		DFAgentDescription dfd = new DFAgentDescription();
-		dfd.setName(getAID());
-		ServiceDescription sd = new ServiceDescription();
-		sd.setType("Estacao");
-		sd.setName(getLocalName());
-		dfd.addServices(sd);
+		// para receber comunicações
+		dfdEstacoes = new DFAgentDescription();
+		dfdEstacoes.setName(getAID());
+		sdEstacoes = new ServiceDescription();
+		sdEstacoes.setType("Estacao");
+		sdEstacoes.setName(getLocalName());
+		dfdEstacoes.addServices(sdEstacoes);
 
 		try {
-			DFService.register(this, dfd);
+			DFService.register(this, dfdEstacoes);
 		} catch (FIPAException e) {
 			e.printStackTrace();
 		}
@@ -73,6 +76,36 @@ public class AgenteCentral extends Agent {
 					int xFire = Integer.parseInt(coordinates[0]);
 					int yFire = Integer.parseInt(coordinates[1]);
 					fires.put( fireCount, new Fire(fireCount, xFire, yFire) );
+
+					// verificar o bombeiro mais próximo
+					Bombeiro bombeiroDisponivel = getNearestAvailableFirefighter(xFire, yFire);
+					// se existe disponível, encaminhá-lo para incendio
+					if (bombeiroDisponivel != null) {
+						// definições para procura de bombeiro
+						dfdBombeiros = new DFAgentDescription();
+						sdBombeiros = new ServiceDescription();
+						sdBombeiros.setType("Bombeiro");
+						sdBombeiros.setName(bombeiroDisponivel.getId()); // procura por o id do Bombeiro
+						dfdBombeiros.addServices(sdBombeiros);
+						DFAgentDescription[] dfBombeiros;
+						try {
+							// obter bombeiro em específico (só deve encontrar 1)
+							dfBombeiros = DFService.search(this.myAgent, dfdBombeiros);
+							if (dfBombeiros.length > 0) {
+								for (int i = 0; i < dfBombeiros.length; ++i) {
+									DFAgentDescription dfd = dfBombeiros[i];
+									AID bombeiro = dfd.getName();
+									ACLMessage newMsg = new ACLMessage(ACLMessage.CFP);
+									newMsg.addReceiver(bombeiro);
+									newMsg.setContent(xFire+";"+yFire);
+									// IM HEREEEEEE MOTHERHELSS
+									send(newMsg);
+								}
+							}
+						} catch (FIPAException e) {
+							e.printStackTrace();
+						}
+					}
 
 					/*
 					// Time to contact all taxis
@@ -160,6 +193,30 @@ public class AgenteCentral extends Agent {
 			else {
 				block();
 			}
+		}
+
+		private Bombeiro getNearestAvailableFirefighter(int xFire, int yFire) {
+			double minDistance = 99999;
+			Bombeiro b = null;
+
+			for (Map.Entry<String, Bombeiro> entry : bombeiros.entrySet()) {
+				Bombeiro bombeiro = entry.getValue();
+				// verificar se está disponível para combater fogo
+				if (bombeiro.isAvailable()) {
+					int xBombeiro = bombeiro.getX();
+					int yBombeiro = bombeiro.getY();
+					// calcular distancia entre bombeiro e fogo a combater
+					double distPercorrer = Math.sqrt(((Math.pow((xFire - xBombeiro), 2)) + (Math.pow((yFire - yBombeiro), 2))));
+					// verificar se é a mais pequena até ao momento
+					if (distPercorrer < minDistance) {
+						minDistance = distPercorrer;
+						b = bombeiro;
+						System.out.println("$ Bombeiro: " + bombeiro.getId() + ", dist: " + minDistance);
+					}
+				}
+			}
+
+			return b;
 		}
 
 	}
