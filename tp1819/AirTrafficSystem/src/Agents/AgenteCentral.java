@@ -75,12 +75,13 @@ public class AgenteCentral extends Agent {
 					System.out.println("x: " + coordinates[0] + ", y: " + coordinates[1]);
 					int xFire = Integer.parseInt(coordinates[0]);
 					int yFire = Integer.parseInt(coordinates[1]);
-					fires.put( fireCount, new Fire(fireCount, xFire, yFire) );
+					fires.put(fireCount, new Fire(fireCount, xFire, yFire));
 
 					// verificar o bombeiro mais próximo
 					Bombeiro bombeiroDisponivel = getNearestAvailableFirefighter(xFire, yFire);
 					// se existe disponível, encaminhá-lo para incendio
 					if (bombeiroDisponivel != null) {
+						System.out.println("$ Estação: Bombeiro " + bombeiroDisponivel.getId() + " disponível.");
 						// definições para procura de bombeiro
 						dfdBombeiros = new DFAgentDescription();
 						sdBombeiros = new ServiceDescription();
@@ -97,8 +98,7 @@ public class AgenteCentral extends Agent {
 									AID bombeiro = dfd.getName();
 									ACLMessage newMsg = new ACLMessage(ACLMessage.CFP);
 									newMsg.addReceiver(bombeiro);
-									newMsg.setContent(xFire+";"+yFire);
-									// IM HEREEEEEE MOTHERHELSS
+									newMsg.setContent(xFire + ";" + yFire);
 									send(newMsg);
 								}
 							}
@@ -106,43 +106,11 @@ public class AgenteCentral extends Agent {
 							e.printStackTrace();
 						}
 					}
-
-					/*
-					// Time to contact all taxis
-					DFAgentDescription template = new DFAgentDescription();
-					ServiceDescription sd = new ServiceDescription();
-					sd.setType("taxi");
-					template.addServices(sd);
-
-					DFAgentDescription[] result;
-
-					try {
-						result = DFService.search(myAgent, template);
-						AID[] taxis;
-						taxis = new AID[result.length];
-						numTaxis = result.length;
-
-						ParallelBehaviour pb = new ParallelBehaviour(myAgent, ParallelBehaviour.WHEN_ALL) {
-
-							public int onEnd() {
-								System.out.println("All taxis inquired.");
-								return super.onEnd();
-							}
-						};
-						myAgent.addBehaviour(pb);
-
-						for (int i = 0; i < result.length; ++i) {
-							taxis[i] = result[i].getName();
-							System.out.println(taxis[i].getName());
-							pb.addSubBehaviour(new taxiSend(taxis[i]));
-						}
-
-					} catch (FIPAException e) {
-						e.printStackTrace();
+					else {
+						System.out.println("$ Estação: Nenhum bombeiro disponível para o combate ao fogo.");
 					}
-					*/
 				}
-				// mensagem proveniente de Bombeiro a informar Coordenadas, Estado e Distancia ao Incendio A Combater
+				// mensagem proveniente de Bombeiro a informar Coordenadas e Estado quando em modo ATIVO
 				// só é enviada esta mensagem depois de uma CFP por parte do Central
 				else if (msg.getPerformative() == ACLMessage.PROPOSE) {
 					System.out.println("$ Estação: Informações de Bombeiro!");
@@ -150,13 +118,13 @@ public class AgenteCentral extends Agent {
 					String[] infos = msg.getContent().split(";");
 					int xBombeiro = Integer.parseInt(infos[0]);
 					int yBombeiro = Integer.parseInt(infos[1]);
-					boolean activeBombeiro =  Boolean.parseBoolean(infos[2]);
-					boolean replanishmentBombeiro =  Boolean.parseBoolean(infos[3]);
+					boolean activeBombeiro = Boolean.parseBoolean(infos[2]);
+					boolean replanishmentBombeiro = Boolean.parseBoolean(infos[3]);
 					String idBombeiro = infos[4];
-					System.out.println("id:" + idBombeiro +", x: " + xBombeiro + ", y: " + yBombeiro +
+					System.out.println("id:" + idBombeiro + ", x: " + xBombeiro + ", y: " + yBombeiro +
 							", active:" + activeBombeiro + ", replanishment:" + replanishmentBombeiro);
 					// se existe, atualizar
-					if(bombeiros.containsKey(idBombeiro)) {
+					if (bombeiros.containsKey(idBombeiro)) {
 						bombeiros.replace(idBombeiro, new Bombeiro(idBombeiro, xBombeiro, yBombeiro, activeBombeiro, replanishmentBombeiro));
 					}
 					// se não existe, adicionar ao catálogo de bombeiros
@@ -164,31 +132,11 @@ public class AgenteCentral extends Agent {
 						bombeiros.put(idBombeiro, new Bombeiro(idBombeiro, xBombeiro, yBombeiro, activeBombeiro, replanishmentBombeiro));
 					}
 				}
-				/*
-				else if (msg.getPerformative() == ACLMessage.INFORM) {
-					String[] coordinates = msg.getContent().split(",");
-					taxisProcessed++;
-					int xTaxi = Integer.parseInt(coordinates[0]);
-					int yTaxi = Integer.parseInt(coordinates[1]);
-					int distance = (int) Math
-							.sqrt(((Math.pow((xTaxi - xOrigin), 2)) + (Math.pow((yTaxi - yOrigin), 2))));
-					System.out.println("D" + msg.getSender().getLocalName() + ":" + distance);
-					if (distance < minDistance) {
-						minDistance = distance;
-						closestTaxi = msg.getSender();
-					}
-					if (taxisProcessed == numTaxis) {
-						System.out.println("Taxi Chosen:" + closestTaxi.getName());
-						ACLMessage mensagem = new ACLMessage(ACLMessage.CONFIRM);
-						mensagem.addReceiver(closestTaxi);
-						mensagem.setContent(customerName + "," + xDestination + "," + yDestination);
-						myAgent.send(mensagem);
-						taxisProcessed = 0;
-						minDistance = 1000;
-						closestTaxi = null;
-					}
-					*/
-
+				// mensagem de confirmação de início de combate a incêndio por parte de bombeiro
+				else if (msg.getPerformative() == ACLMessage.CONFIRM) {
+					System.out.println("$ Estação: Confirmação bombeiro");
+					// nao esta a ser recebido
+				}
 			}
 			else {
 				block();
@@ -211,7 +159,6 @@ public class AgenteCentral extends Agent {
 					if (distPercorrer < minDistance) {
 						minDistance = distPercorrer;
 						b = bombeiro;
-						System.out.println("$ Bombeiro: " + bombeiro.getId() + ", dist: " + minDistance);
 					}
 				}
 			}
