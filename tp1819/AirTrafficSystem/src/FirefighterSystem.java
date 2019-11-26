@@ -4,6 +4,11 @@ import jade.core.Runtime;
 import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 
+/*
+- from AgenteIncendiario to AgenteCentral - informar coordenadas novo fogo -> INFORM
+- from AgenteBombeiro to AgenteCentral - informar coordenadas e estado de bombeiro -> PROPOSE
+ */
+
 public class FirefighterSystem {
 
     Runtime rt;
@@ -12,17 +17,26 @@ public class FirefighterSystem {
     public static void main(String[] args) {
         FirefighterSystem a = new FirefighterSystem();
         a.initMainContainerInPlatform("localhost", "9888", "FirefighterSystem");
+        Object[] dummyAargs = new Object[0];
 
         // criar estacao
-        a.startAgentInPlatform("AgenteCentral", "Agents.AgenteCentral");
+        a.startAgentInPlatform("AgenteCentral", "Agents.AgenteCentral", dummyAargs);
+
+        // agentes bombeiros
+        for (int i = 0; i < 1; i++) {
+            Object[] aargs = new Object[2];
+            aargs[0] = (int) i; // identificador de agente
+            aargs[1] = (int) 1; // tipo de agente
+            a.startAgentInPlatform("Bombeiro" + i, "Agents.AgenteBombeiro", aargs);
+        }
 
         // criar incendiario
-        a.startAgentInPlatform("AgenteIncendiario", "Agents.AgenteIncendiario");
+        a.startAgentInPlatform("AgenteIncendiario", "Agents.AgenteIncendiario", dummyAargs);
     }
 
-    public void startAgentInPlatform(String name, String classpath) {
+    public void startAgentInPlatform(String name, String classpath, Object[] aargs) {
         try {
-            AgentController ac = container.createNewAgent(name, classpath, new Object[0]);
+            AgentController ac = container.createNewAgent(name, classpath, aargs);
             ac.start();
         } catch (Exception e) {
             e.printStackTrace();

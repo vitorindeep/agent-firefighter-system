@@ -2,6 +2,7 @@ package Agents;
 
 import java.util.*;
 
+import Components.Bombeiro;
 import Components.Fire;
 import jade.core.AID;
 import jade.core.Agent;
@@ -48,7 +49,9 @@ public class AgenteCentral extends Agent {
 
 	private class Receiver extends CyclicBehaviour {
 		private int fireCount = 0; // count the number of fires solved
-		private List<Fire> fires = new ArrayList<Fire>();
+		private HashMap<Integer, Fire> fires = new HashMap<Integer, Fire>(); // all the fires
+		private HashMap<String, Bombeiro> bombeiros = new HashMap<String, Bombeiro>(); // all the bombeiros agents
+
 
 		//
 		private int xOrigin, yOrigin;
@@ -60,7 +63,7 @@ public class AgenteCentral extends Agent {
 		public void action() {
 			ACLMessage msg = receive();
 			if (msg != null) {
-				// mensagem proveniente de incendiario
+				// mensagem proveniente de Incendiario
 				if (msg.getPerformative() == ACLMessage.INFORM) {
 					System.out.println("$ Estação: Novo fogo detetado!");
 					this.fireCount++;
@@ -69,7 +72,7 @@ public class AgenteCentral extends Agent {
 					System.out.println("x: " + coordinates[0] + ", y: " + coordinates[1]);
 					int xFire = Integer.parseInt(coordinates[0]);
 					int yFire = Integer.parseInt(coordinates[1]);
-					fires.add( new Fire(fireCount, xFire, yFire) );
+					fires.put( fireCount, new Fire(fireCount, xFire, yFire) );
 
 					/*
 					// Time to contact all taxis
@@ -106,7 +109,28 @@ public class AgenteCentral extends Agent {
 					}
 					*/
 				}
-
+				// mensagem proveniente de Bombeiro a informar Coordenadas, Estado e Distancia ao Incendio A Combater
+				// só é enviada esta mensagem depois de uma CFP por parte do Central
+				else if (msg.getPerformative() == ACLMessage.PROPOSE) {
+					System.out.println("$ Estação: Informações de Bombeiro!");
+					// extract bombeiro info
+					String[] infos = msg.getContent().split(";");
+					int xBombeiro = Integer.parseInt(infos[0]);
+					int yBombeiro = Integer.parseInt(infos[1]);
+					boolean activeBombeiro =  Boolean.parseBoolean(infos[2]);
+					boolean replanishmentBombeiro =  Boolean.parseBoolean(infos[3]);
+					String idBombeiro = infos[4];
+					System.out.println("id:" + idBombeiro +", x: " + xBombeiro + ", y: " + yBombeiro +
+							", active:" + activeBombeiro + ", replanishment:" + replanishmentBombeiro);
+					// se existe, atualizar
+					if(bombeiros.containsKey(idBombeiro)) {
+						bombeiros.replace(idBombeiro, new Bombeiro(idBombeiro, xBombeiro, yBombeiro, activeBombeiro, replanishmentBombeiro));
+					}
+					// se não existe, adicionar ao catálogo de bombeiros
+					else {
+						bombeiros.put(idBombeiro, new Bombeiro(idBombeiro, xBombeiro, yBombeiro, activeBombeiro, replanishmentBombeiro));
+					}
+				}
 				/*
 				else if (msg.getPerformative() == ACLMessage.INFORM) {
 					String[] coordinates = msg.getContent().split(",");
