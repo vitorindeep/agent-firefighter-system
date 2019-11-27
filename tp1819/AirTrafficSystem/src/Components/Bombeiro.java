@@ -4,13 +4,14 @@ public class Bombeiro {
 
     private String id;
     private int x, y;
-    private boolean active, replenishment;
+    private boolean moving, fighting, replenishment;
 
-    public Bombeiro(String id, int coordX, int coordY, boolean active, boolean replenishment) {
+    public Bombeiro(String id, int coordX, int coordY, boolean moving, boolean fighting, boolean replenishment) {
         this.id = id;
         this.x = coordX;
         this.y = coordY;
-        this.active = active;
+        this.moving = moving;
+        this.fighting = fighting;
         this.replenishment = replenishment;
     }
 
@@ -29,6 +30,6 @@ public class Bombeiro {
     public boolean isAvailable() {
         // só disponível quando não está ativamente a combater fogo
         // e quando não está em reabastecimento
-        return (!active && !replenishment);
+        return (!moving && !fighting && !replenishment);
     }
 }

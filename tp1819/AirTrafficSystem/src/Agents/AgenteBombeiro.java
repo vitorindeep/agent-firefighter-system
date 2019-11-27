@@ -16,13 +16,13 @@ import java.util.Random;
 public class AgenteBombeiro extends Agent {
     private String id;
     private int x, y;
-    private int xActiveFire, yActiveFire;
+    private int xDestination, yDestination;
     private int direcaoX = 0, direcaoY = 0;
-    private int velocidadeMax;
-    private boolean active, replenishment;
+    private int velocidadeMax, fuel, fuelMax, water, waterMax;
+    private boolean movingToFire, fightingFire, replenishment;
     // listar em relação à lista de informação de aviões
-    private DFAgentDescription dfdEstacoes, dfdBombeiro;
-    private ServiceDescription sdEstacoes, sdBombeiro;
+    private DFAgentDescription dfdEstacoes, dfdBombeiro, dfdInterface;
+    private ServiceDescription sdEstacoes, sdBombeiro, sdInterface;
 
     protected void setup() {
         System.out.println("$ Starting: Bombeiro");
@@ -32,7 +32,8 @@ public class AgenteBombeiro extends Agent {
         x = rand.nextInt(100);
         y = rand.nextInt(100);
         // estado inicial
-        active = false;
+        movingToFire = false;
+        fightingFire = false;
         replenishment = false;
 
         // ler argumentos para criar novo AgenteBombeiro
@@ -44,6 +45,8 @@ public class AgenteBombeiro extends Agent {
         // adapt velocidadeMax according to vehicle type
         if(true) { // THIS HAS TO CHANGE
             velocidadeMax = 5;
+            fuel = fuelMax = 15;
+            water = waterMax = 20;
         }
 
         // definições de DF
@@ -52,6 +55,11 @@ public class AgenteBombeiro extends Agent {
         sdEstacoes = new ServiceDescription();
         sdEstacoes.setType("Estacao");
         dfdEstacoes.addServices(sdEstacoes);
+        // Para comunicação com interfaces
+        dfdInterface = new DFAgentDescription();
+        sdInterface = new ServiceDescription();
+        sdInterface.setType("Interface");
+        dfdInterface.addServices(sdInterface);
         // Para comunicação de Estações para mim (bombeiro)
         dfdBombeiro = new DFAgentDescription();
         sdBombeiro = new ServiceDescription();
@@ -69,6 +77,7 @@ public class AgenteBombeiro extends Agent {
         this.addBehaviour(new EnviarCoordsIniciais());
         this.addBehaviour(new EnviarCoords(this, 1000));
         this.addBehaviour(new ReceberPedidoCombate());
+        this.addBehaviour(new Movimento(this, 1000));
     }
 
     protected void takeDown() {
@@ -91,7 +100,8 @@ public class AgenteBombeiro extends Agent {
                         if(!central.equals(this.myAgent.getAID())){
                             ACLMessage msg = new ACLMessage(ACLMessage.PROPOSE);
                             msg.addReceiver(central);
-                            msg.setContent(x+";"+y+";"+active+";"+replenishment+";"+id);
+                            msg.setContent(x+";"+y+";"+movingToFire+";"+fightingFire+";"+replenishment+";"+id+
+                                    ";"+water+";"+fuel);
                             send(msg);
                         }
                     }
@@ -102,16 +112,16 @@ public class AgenteBombeiro extends Agent {
         }
     }
 
-    // enviar coordenadas de 1 em 1 seg para o AgenteCentrak
+    // enviar coordenadas e estado de 1 em 1 seg para o AgenteCentral, quando em movimento
     private class EnviarCoords extends TickerBehaviour {
 
         public EnviarCoords(Agent a, long period) { super(a, period); }
 
         protected void onTick() {
-            // verificar se está em combate a incêndio (active)
+            // verificar se está em direção a incêndio (active)
             // ou em reabastecimento (replenishment)
             // (caso contrário, não muda coordenadas)
-            if(active || replenishment){
+            if(movingToFire || replenishment){
                 try {
                     // enviar coordenadas a todas as Estações (só haverá uma no caso base)
                     DFAgentDescription[] dfCentrais = DFService.search(this.myAgent, dfdEstacoes);
@@ -122,7 +132,8 @@ public class AgenteBombeiro extends Agent {
                             if(!central.equals(this.myAgent.getAID())){
                                 ACLMessage msg = new ACLMessage(ACLMessage.PROPOSE);
                                 msg.addReceiver(central);
-                                msg.setContent(x+";"+y+";"+active+";"+replenishment+";"+id);
+                                msg.setContent(x+";"+y+";"+movingToFire+";"+fightingFire+";"+replenishment+";"+id+
+                                        ";"+water+";"+fuel);
                                 send(msg);
                             }
                         }
@@ -140,16 +151,15 @@ public class AgenteBombeiro extends Agent {
             ACLMessage msg = receive();
             if (msg != null) {
                 if (msg.getPerformative() == ACLMessage.CFP) {
-                    System.out.println("$ Bombeiro " + id + ": Pedido para combate");
-                    // signal for active fire fighting
-                    active = true;
+                    // signal for active fire fighting (moving atm)
+                    movingToFire = true;
                     // extract fire coordinates
                     String[] coordinates = msg.getContent().split(";");
-                    xActiveFire = Integer.parseInt(coordinates[0]);
-                    yActiveFire = Integer.parseInt(coordinates[1]);
-                    System.out.println("Fogo em (" + xActiveFire + ", " + yActiveFire + ")");
+                    xDestination = Integer.parseInt(coordinates[0]);
+                    yDestination = Integer.parseInt(coordinates[1]);
+                    System.out.println("$ Bombeiro " + id + ": Pedido para combate. Fogo em (" + xDestination + ", " + yDestination + ")");
                     // definir direção no eixo para luta a incêndio
-                    adaptDirectionOfMovement(xActiveFire, yActiveFire);
+                    adaptDirectionOfMovement(xDestination, yDestination);
                     // reply
                     ACLMessage response = msg.createReply();
                     response.setPerformative(ACLMessage.CONFIRM);
@@ -162,92 +172,125 @@ public class AgenteBombeiro extends Agent {
         }
 
         private void adaptDirectionOfMovement(int xFire, int yFire) {
-
+            // x
             if (xFire > x) {
                 direcaoX = 1;
             }
-            else {
+            else if (xFire < x) {
                 direcaoX = -1;
             }
+            else {
+                direcaoX = 0;
+            }
+            // y
             if (yFire > y) {
                 direcaoY = 1;
             }
-            else {
+            else if (yFire < y) {
                 direcaoY = -1;
+            }
+            else {
+                direcaoY = 0;
             }
         }
     }
 
     // simular movimento do bombeiro de acordo com a sua velocidade
     private class Movimento extends TickerBehaviour {
-        private int velocidadeAtual = 0;
 
         public Movimento(Agent a, long period) { super(a, period); }
         protected void onTick() {
-            if(velocidadeAtual!=0) {
-                x=x+velocidadeMax*direcaoX;
-                y=y+velocidadeMax*direcaoY;
-
-
-                // ESTOU AQUI!!!
+            // na luta contra incendio ou em busca de recursos há moviemento
+            if(movingToFire || replenishment) {
+                int newX = x+velocidadeMax*direcaoX;
+                int newY = y+velocidadeMax*direcaoY;
+                checkIfDestinationAchieved(newX, newY);
 
                 // informação para interface
                 try {
-                    DFAgentDescription d = new DFAgentDescription();
-                    ServiceDescription s = new ServiceDescription();
-                    s.setType("Interface");
-                    d.addServices(s);
                     // procurar interfaces registadas
-                    DFAgentDescription[] r = DFService.search(this.myAgent, d);
+                    DFAgentDescription[] r = DFService.search(this.myAgent, dfdInterface);
                     if (r.length > 0) {
                         // enviar mensagem com nome, coordX e coordY para todas as interfaces registadas
                         for (int i = 0; i < r.length; ++i) {
-                            DFAgentDescription d2 = r[i];
-                            AID p = d2.getName();
+                            DFAgentDescription interf = r[i];
+                            AID interfName = interf.getName();
                             ACLMessage m = new ACLMessage(ACLMessage.INFORM);
-                            m.addReceiver(p);
-                            m.setContent(name+";"+coordX+";"+coordY);
+                            m.addReceiver(interfName);
+                            m.setContent(id+";"+x+";"+y);
                             send(m);
                         }
                     }
                 } catch (FIPAException fe) {
                     fe.printStackTrace();
                 }
-                distPercorrida+=velocidadeAtual;
-                distPercorrer-=velocidadeAtual;
-                tempoDecorrido++;
-                tempoFalta=distPercorrer/velocidadeAtual;
-                if(alterouDir || alterouVel) {
-                    // informar estação seguinte das suas novas condições de viagem
-                    try {
-                        DFAgentDescription dfd = new DFAgentDescription();
-                        ServiceDescription sd = new ServiceDescription();
-                        sd.setType(aes.get(conta+1)); // proxima estação (para a qual se viaja agora)
-                        dfd.addServices(sd);
-                        // procurar estações registadas com aquele nome (deverá ser apenas 1)
-                        DFAgentDescription[] results = DFService.search(this.myAgent, dfd);
-                        if (results.length > 0) {
-                            // enviar mensagem com nome, tempo decorrido da viagem e tempo que falta para chegar
-                            for (int i = 0; i < results.length; ++i) {
-                                DFAgentDescription dfd2 = results[i];
-                                AID provider = dfd2.getName();
-                                ACLMessage msg2 = new ACLMessage(ACLMessage.INFORM_IF);
-                                msg2.addReceiver(provider);
-                                if(alterouDir) {
-                                    distPercorrer=Math.sqrt(((Math.pow((destCoordX - coordX), 2)) + (Math.pow((destCoordY - coordY), 2))));
-                                    direcaoX=(destCoordX-coordX)/distPercorrer;
-                                    direcaoY=(destCoordY-coordY)/distPercorrer;
-                                    tempoFalta=distPercorrer/velocidadeAtual;
-                                }
-                                msg2.setContent(name+";"+tempoDecorrido+";"+tempoFalta);
-                                send(msg2);
-                            }
-                        }
-                    } catch (FIPAException fe) {
-                        fe.printStackTrace();
-                    }
-                    alterouDir=false;
-                    alterouVel=false;
+                System.out.println("Para Interface: id: " + id + ", " +
+                        "x: " + x + ", " +
+                        "y: " + y + ", " +
+                        "xDest: " + xDestination + ", " +
+                        "yDest: " + yDestination + ", " +
+                        "direcaoX: " + direcaoX + ", " +
+                        "direcaoY: " + direcaoY + ", " +
+                        "moving: " + movingToFire + ", " +
+                        "fighting: " + fightingFire + ", " +
+                        "replenishment: " + replenishment);
+            }
+        }
+
+        // this method changes direcaoX and direcaoY if position X or Y was reached
+        // when both are reached, sets velocidadeAtual to 0, making the bombeiro stop moving
+        private void checkIfDestinationAchieved(int newX, int newY) {
+
+            // deslocação no sentido positivo em X
+            if (direcaoX > 0) {
+                // ultrapassamos o ponto do fogo, por isso assumimos que já lá chegamos
+                if(newX > xDestination) {
+                    x = xDestination;
+                    direcaoX = 0; // parar de mover neste sentido
+                }
+                else x = newX;
+            }
+            // deslocação no sentido negativo em X
+            if (direcaoX < 0) {
+                // ultrapassamos o ponto do fogo, por isso assumimos que já lá chegamos
+                if(newX < xDestination) {
+                    x = xDestination;
+                    direcaoX = 0; // parar de mover neste sentido
+                }
+                else x = newX;
+            }
+
+            // deslocação no sentido positivo em Y
+            if (direcaoY > 0) {
+                // ultrapassamos o ponto do fogo, por isso assumimos que já lá chegamos
+                if(newY > yDestination) {
+                    y = yDestination;
+                    direcaoY = 0; // parar de mover neste sentido
+                }
+                else y = newY;
+            }
+            // deslocação no sentido negativo em Y
+            if (direcaoY < 0) {
+                // ultrapassamos o ponto do fogo, por isso assumimos que já lá chegamos
+                if(newY < yDestination) {
+                    y = yDestination;
+                    direcaoY = 0; // parar de mover neste sentido
+                }
+                else y = newY;
+            }
+
+            // destino atingido, quer seja incendio ou replenishment
+            if ((direcaoX == 0) && (direcaoY == 0)) {
+                // chegou ao fogo
+                if (movingToFire) {
+                    movingToFire = false;
+                    fightingFire = true;
+                }
+                // chegou ao abastecimento
+                else {
+                    replenishment = false;
+                    fuel = fuelMax;
+                    water = waterMax;
                 }
             }
         }

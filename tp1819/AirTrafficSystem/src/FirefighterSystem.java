@@ -6,6 +6,7 @@ import jade.wrapper.ContainerController;
 
 /*
 - from AgenteIncendiario to AgenteCentral - informar coordenadas novo fogo -> INFORM
+- from AgenteBombeiro to AgenteInterface - informar coordenadas atuais -> INFORM
 - from AgenteBombeiro to AgenteCentral - informar coordenadas e estado de bombeiro -> PROPOSE
 - from AgenteCentral to AgenteBombeiro - informar incêndio a combater e coords -> CFP
 - from AgenteBombeiro to AgenteCentral - confirmar aceitação de pedido -> CONFIRM

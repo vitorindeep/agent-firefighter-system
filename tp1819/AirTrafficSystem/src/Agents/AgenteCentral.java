@@ -68,11 +68,10 @@ public class AgenteCentral extends Agent {
 			if (msg != null) {
 				// mensagem proveniente de Incendiario
 				if (msg.getPerformative() == ACLMessage.INFORM) {
-					System.out.println("$ Estação: Novo fogo detetado!");
 					this.fireCount++;
 					// extract fire coordinates
 					String[] coordinates = msg.getContent().split(";");
-					System.out.println("x: " + coordinates[0] + ", y: " + coordinates[1]);
+					System.out.println("$ Estação: Novo fogo detetado! -> x: " + coordinates[0] + ", y: " + coordinates[1]);
 					int xFire = Integer.parseInt(coordinates[0]);
 					int yFire = Integer.parseInt(coordinates[1]);
 					fires.put(fireCount, new Fire(fireCount, xFire, yFire));
@@ -113,23 +112,27 @@ public class AgenteCentral extends Agent {
 				// mensagem proveniente de Bombeiro a informar Coordenadas e Estado quando em modo ATIVO
 				// só é enviada esta mensagem depois de uma CFP por parte do Central
 				else if (msg.getPerformative() == ACLMessage.PROPOSE) {
-					System.out.println("$ Estação: Informações de Bombeiro!");
 					// extract bombeiro info
 					String[] infos = msg.getContent().split(";");
 					int xBombeiro = Integer.parseInt(infos[0]);
 					int yBombeiro = Integer.parseInt(infos[1]);
-					boolean activeBombeiro = Boolean.parseBoolean(infos[2]);
-					boolean replanishmentBombeiro = Boolean.parseBoolean(infos[3]);
-					String idBombeiro = infos[4];
-					System.out.println("id:" + idBombeiro + ", x: " + xBombeiro + ", y: " + yBombeiro +
-							", active:" + activeBombeiro + ", replanishment:" + replanishmentBombeiro);
+					boolean movingBombeiro = Boolean.parseBoolean(infos[2]);
+					boolean fightingBombeiro = Boolean.parseBoolean(infos[3]);
+					boolean replanishmentBombeiro = Boolean.parseBoolean(infos[4]);
+					String idBombeiro = infos[5];
+					int waterBombeiro = Integer.parseInt(infos[6]);
+					int fuelBombeiro = Integer.parseInt(infos[7]);
+					System.out.println("$ Estação: Informações de Bombeiro! -> id: " + idBombeiro + ", x: " + xBombeiro + ", y: " + yBombeiro +
+							", moving: " + movingBombeiro + ", fighting: " + fightingBombeiro +
+							", replanishment: " + replanishmentBombeiro +
+							", water: " + waterBombeiro + ", fuel: " + fuelBombeiro);
 					// se existe, atualizar
 					if (bombeiros.containsKey(idBombeiro)) {
-						bombeiros.replace(idBombeiro, new Bombeiro(idBombeiro, xBombeiro, yBombeiro, activeBombeiro, replanishmentBombeiro));
+						bombeiros.replace(idBombeiro, new Bombeiro(idBombeiro, xBombeiro, yBombeiro, movingBombeiro, fightingBombeiro, replanishmentBombeiro));
 					}
 					// se não existe, adicionar ao catálogo de bombeiros
 					else {
-						bombeiros.put(idBombeiro, new Bombeiro(idBombeiro, xBombeiro, yBombeiro, activeBombeiro, replanishmentBombeiro));
+						bombeiros.put(idBombeiro, new Bombeiro(idBombeiro, xBombeiro, yBombeiro, movingBombeiro, fightingBombeiro, replanishmentBombeiro));
 					}
 				}
 				// mensagem de confirmação de início de combate a incêndio por parte de bombeiro
