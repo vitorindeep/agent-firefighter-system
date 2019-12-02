@@ -35,6 +35,7 @@ public class Main {
 		a.initMainContainerInPlatform("localhost", "9888", "Main");
 		// criar interface
 		a.startAgentInPlatform("AI", "Agents.AgenteInterface",new Object[0]);
+		a.startAgentInPlatform("AMap", "Agents.AgenteMapa", new Object[0]);
 
 		// criar estações
 		Object[] aargs3=new Object[3];
