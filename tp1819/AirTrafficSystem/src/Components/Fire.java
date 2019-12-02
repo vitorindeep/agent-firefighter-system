@@ -20,10 +20,13 @@ public class Fire {
     }
 
     public void decreaseFireIntensity() {
-        this.intensity++;
+        this.intensity--;
         if (this.intensity == 0) {
             this.active = false;
         }
-        System.out.println("$ Fire " + this.id + ": EXTINGUISHED");
+    }
+
+    public boolean isFireExtinguished() {
+        return !active;
     }
 }

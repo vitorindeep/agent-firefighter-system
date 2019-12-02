@@ -15,6 +15,7 @@ import java.util.Random;
 
 public class AgenteBombeiro extends Agent {
     private String id;
+    private int idFire;
     private int x, y;
     private int xDestination, yDestination;
     private int direcaoX = 0, direcaoY = 0;
@@ -74,10 +75,11 @@ public class AgenteBombeiro extends Agent {
         }
 
         // assumir behaviours
-        this.addBehaviour(new EnviarCoordsIniciais());
-        this.addBehaviour(new EnviarCoords(this, 1000));
-        this.addBehaviour(new ReceberPedidoCombate());
+        this.addBehaviour(new EnviarInfoCentralIniciais());
+        this.addBehaviour(new EnviarInfoCentral(this, 1000));
+        this.addBehaviour(new ReceberInfoCombate());
         this.addBehaviour(new Movimento(this, 1000));
+        this.addBehaviour(new ApagarIncendio(this, 1000));
     }
 
     protected void takeDown() {
@@ -86,7 +88,7 @@ public class AgenteBombeiro extends Agent {
 
     }
 
-    private class EnviarCoordsIniciais extends OneShotBehaviour {
+    private class EnviarInfoCentralIniciais extends OneShotBehaviour {
 
         @Override
         public void action() {
@@ -112,58 +114,63 @@ public class AgenteBombeiro extends Agent {
         }
     }
 
-    // enviar coordenadas e estado de 1 em 1 seg para o AgenteCentral, quando em movimento
-    private class EnviarCoords extends TickerBehaviour {
+    // enviar coordenadas e estado de 1 em 1 seg para o AgenteCentral
+    private class EnviarInfoCentral extends TickerBehaviour {
 
-        public EnviarCoords(Agent a, long period) { super(a, period); }
+        public EnviarInfoCentral(Agent a, long period) { super(a, period); }
 
         protected void onTick() {
-            // verificar se está em direção a incêndio (active)
-            // ou em reabastecimento (replenishment)
-            // (caso contrário, não muda coordenadas)
-            if(movingToFire || replenishment){
-                try {
-                    // enviar coordenadas a todas as Estações (só haverá uma no caso base)
-                    DFAgentDescription[] dfCentrais = DFService.search(this.myAgent, dfdEstacoes);
-                    if (dfCentrais.length > 0) {
-                        for (int i = 0; i < dfCentrais.length; ++i) {
-                            DFAgentDescription dfd = dfCentrais[i];
-                            AID central = dfd.getName();
-                            if(!central.equals(this.myAgent.getAID())){
-                                ACLMessage msg = new ACLMessage(ACLMessage.PROPOSE);
-                                msg.addReceiver(central);
-                                msg.setContent(x+";"+y+";"+movingToFire+";"+fightingFire+";"+replenishment+";"+id+
-                                        ";"+water+";"+fuel);
-                                send(msg);
-                            }
+            // é sempre importante enviar o estado de modo a atualizar o agente central
+            try {
+                // enviar coordenadas a todas as Estações (só haverá uma no caso base)
+                DFAgentDescription[] dfCentrais = DFService.search(this.myAgent, dfdEstacoes);
+                if (dfCentrais.length > 0) {
+                    for (int i = 0; i < dfCentrais.length; ++i) {
+                        DFAgentDescription dfd = dfCentrais[i];
+                        AID central = dfd.getName();
+                        if(!central.equals(this.myAgent.getAID())){
+                            ACLMessage msg = new ACLMessage(ACLMessage.PROPOSE);
+                            msg.addReceiver(central);
+                            msg.setContent(x+";"+y+";"+movingToFire+";"+fightingFire+";"+replenishment+";"+id+
+                                    ";"+water+";"+fuel);
+                            send(msg);
                         }
                     }
-                } catch (FIPAException fe) {
-                    fe.printStackTrace();
                 }
+            } catch (FIPAException fe) {
+                fe.printStackTrace();
             }
         }
     }
 
-    // receber pedidos para lutar por incêncio
-    private class ReceberPedidoCombate extends CyclicBehaviour {
+    // receber pedidos para lutar por incêndio e quando acaba
+    private class ReceberInfoCombate extends CyclicBehaviour {
         public void action() {
             ACLMessage msg = receive();
             if (msg != null) {
+                // pedido para lutar por incêndio
                 if (msg.getPerformative() == ACLMessage.CFP) {
                     // signal for active fire fighting (moving atm)
                     movingToFire = true;
                     // extract fire coordinates
                     String[] coordinates = msg.getContent().split(";");
-                    xDestination = Integer.parseInt(coordinates[0]);
-                    yDestination = Integer.parseInt(coordinates[1]);
-                    System.out.println("$ Bombeiro " + id + ": Pedido para combate. Fogo em (" + xDestination + ", " + yDestination + ")");
+                    idFire = Integer.parseInt(coordinates[0]);
+                    xDestination = Integer.parseInt(coordinates[1]);
+                    yDestination = Integer.parseInt(coordinates[2]);
+                    System.out.println("$ Bombeiro " + id + ": Pedido para combate. Fogo id : " + idFire + " em (" + xDestination + ", " + yDestination + ")");
                     // definir direção no eixo para luta a incêndio
                     adaptDirectionOfMovement(xDestination, yDestination);
                     // reply
                     ACLMessage response = msg.createReply();
                     response.setPerformative(ACLMessage.CONFIRM);
                     send(response);
+                }
+                // receber informação de incêndio apagado
+                else if (msg.getPerformative() == ACLMessage.CONFIRM) {
+                    fightingFire = false;
+                    System.out.println("$ Bombeiro " + id + ": Combate a incêndio " + idFire + " terminado.");
+                    // verificar necessidade de reabastecimento
+                    // TODO
                 }
             } else {
                 block();
@@ -224,6 +231,7 @@ public class AgenteBombeiro extends Agent {
                 } catch (FIPAException fe) {
                     fe.printStackTrace();
                 }
+                /*
                 System.out.println("Para Interface: id: " + id + ", " +
                         "x: " + x + ", " +
                         "y: " + y + ", " +
@@ -234,6 +242,7 @@ public class AgenteBombeiro extends Agent {
                         "moving: " + movingToFire + ", " +
                         "fighting: " + fightingFire + ", " +
                         "replenishment: " + replenishment);
+                */
             }
         }
 
@@ -249,6 +258,8 @@ public class AgenteBombeiro extends Agent {
                     direcaoX = 0; // parar de mover neste sentido
                 }
                 else x = newX;
+                // gasta combustível
+                fuel--;
             }
             // deslocação no sentido negativo em X
             if (direcaoX < 0) {
@@ -258,6 +269,8 @@ public class AgenteBombeiro extends Agent {
                     direcaoX = 0; // parar de mover neste sentido
                 }
                 else x = newX;
+                // gasta combustível
+                fuel--;
             }
 
             // deslocação no sentido positivo em Y
@@ -268,6 +281,8 @@ public class AgenteBombeiro extends Agent {
                     direcaoY = 0; // parar de mover neste sentido
                 }
                 else y = newY;
+                // gasta combustível
+                fuel--;
             }
             // deslocação no sentido negativo em Y
             if (direcaoY < 0) {
@@ -277,6 +292,8 @@ public class AgenteBombeiro extends Agent {
                     direcaoY = 0; // parar de mover neste sentido
                 }
                 else y = newY;
+                // gasta combustível
+                fuel--;
             }
 
             // destino atingido, quer seja incendio ou replenishment
@@ -291,6 +308,39 @@ public class AgenteBombeiro extends Agent {
                     replenishment = false;
                     fuel = fuelMax;
                     water = waterMax;
+                }
+            }
+        }
+    }
+
+    // gastar recursos no incendio uma vez chegado ao mesmo
+    // e informar estacao
+    private class ApagarIncendio extends TickerBehaviour {
+
+        public ApagarIncendio(Agent a, long period) { super(a, period); }
+
+        protected void onTick() {
+            // verificar se está a combater incêndio
+            if(fightingFire){
+                try {
+                    // gastar água
+                    water--;
+                    // enviar informação com gasto de unidade de água para X incêndio
+                    DFAgentDescription[] dfCentrais = DFService.search(this.myAgent, dfdEstacoes);
+                    if (dfCentrais.length > 0) {
+                        for (int i = 0; i < dfCentrais.length; ++i) {
+                            DFAgentDescription dfd = dfCentrais[i];
+                            AID central = dfd.getName();
+                            if(!central.equals(this.myAgent.getAID())){
+                                ACLMessage msg = new ACLMessage(ACLMessage.INFORM_IF);
+                                msg.addReceiver(central);
+                                msg.setContent(idFire + "");
+                                send(msg);
+                            }
+                        }
+                    }
+                } catch (FIPAException fe) {
+                    fe.printStackTrace();
                 }
             }
         }

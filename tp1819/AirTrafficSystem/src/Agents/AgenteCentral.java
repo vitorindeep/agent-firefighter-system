@@ -97,7 +97,7 @@ public class AgenteCentral extends Agent {
 									AID bombeiro = dfd.getName();
 									ACLMessage newMsg = new ACLMessage(ACLMessage.CFP);
 									newMsg.addReceiver(bombeiro);
-									newMsg.setContent(xFire + ";" + yFire);
+									newMsg.setContent(fireCount + ";" + xFire + ";" + yFire);
 									send(newMsg);
 								}
 							}
@@ -135,10 +135,24 @@ public class AgenteCentral extends Agent {
 						bombeiros.put(idBombeiro, new Bombeiro(idBombeiro, xBombeiro, yBombeiro, movingBombeiro, fightingBombeiro, replanishmentBombeiro));
 					}
 				}
-				// mensagem de confirmação de início de combate a incêndio por parte de bombeiro
+				// mensagem de confirmação de início de ida para incêndio por parte de bombeiro
 				else if (msg.getPerformative() == ACLMessage.CONFIRM) {
 					System.out.println("$ Estação: Confirmação bombeiro");
-					// nao esta a ser recebido
+				}
+				// mensagem de informação de gasto de unidade de água para X incêndio
+				else if (msg.getPerformative() == ACLMessage.INFORM_IF) {
+					// extract fire being fighted info
+					int idFire = Integer.parseInt(msg.getContent());
+					System.out.println("$ Estação: 1 unidade de água utilizada no incêndio " + idFire);
+					fires.get(idFire).decreaseFireIntensity();
+					// caso extinto, enviar notícia de extinção para o bombeiro responsável pelo incêndio
+					// e atualizar a nossa lista de bombeiros
+					if(fires.get(idFire).isFireExtinguished()) {
+						ACLMessage reply = msg.createReply();
+						reply.setPerformative(ACLMessage.CONFIRM);
+						send(reply);
+						System.out.println("Extinto: " + fires.get(idFire).isFireExtinguished());
+					}
 				}
 			}
 			else {
