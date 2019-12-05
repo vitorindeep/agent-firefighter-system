@@ -47,8 +47,8 @@ public class AgenteIncendiario extends Agent {
             try {
                 DFAgentDescription[] estacoes = DFService.search(this.myAgent, dfd);
                 // escolher local de novo incêndio
-                int coordX = rand.nextInt(100);
-                int coordY = rand.nextInt(100);
+                int coordX = rand.nextInt(39);
+                int coordY = rand.nextInt(29);
                 // enviar localização de novo incêndio para todas as Estações
                 for(DFAgentDescription dfEstacao : estacoes) {
                     AID estacaoID = dfEstacao.getName();

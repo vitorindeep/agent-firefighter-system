@@ -30,8 +30,8 @@ public class AgenteBombeiro extends Agent {
         super.setup();
         // posição inicial
         Random rand = new Random();
-        x = rand.nextInt(100);
-        y = rand.nextInt(100);
+        x = rand.nextInt(39);
+        y = rand.nextInt(29);
         // estado inicial
         movingToFire = false;
         fightingFire = false;
@@ -224,7 +224,7 @@ public class AgenteBombeiro extends Agent {
                             AID interfName = interf.getName();
                             ACLMessage m = new ACLMessage(ACLMessage.INFORM);
                             m.addReceiver(interfName);
-                            m.setContent(id+";"+x+";"+y);
+                            m.setContent(id+";"+x+";"+y+";"+water+";"+fuel);
                             send(m);
                         }
                     }

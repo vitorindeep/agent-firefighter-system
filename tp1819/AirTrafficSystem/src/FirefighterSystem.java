@@ -4,6 +4,8 @@ import jade.core.Runtime;
 import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 
+import java.util.Random;
+
 /*
 - from AgenteIncendiario to AgenteCentral - informar coordenadas novo fogo -> INFORM
 - from AgenteBombeiro to AgenteInterface - informar coordenadas atuais -> INFORM
@@ -19,10 +21,13 @@ public class FirefighterSystem {
     Runtime rt;
     ContainerController container;
 
+
     public static void main(String[] args) {
         FirefighterSystem a = new FirefighterSystem();
         a.initMainContainerInPlatform("localhost", "9888", "FirefighterSystem");
         Object[] dummyAargs = new Object[0];
+
+        Random rand = new Random();
 
         // criar estacao
         a.startAgentInPlatform("AgenteCentral", "Agents.AgenteCentral", dummyAargs);
@@ -37,6 +42,15 @@ public class FirefighterSystem {
 
         // criar incendiario
         a.startAgentInPlatform("AgenteIncendiario", "Agents.AgenteIncendiario", dummyAargs);
+        // criar agente interface
+        Object[] iargs = new Object[2];
+        for (int i = 0; i < 5; i++){
+            int coordX = rand.nextInt(39);
+            int coordY = rand.nextInt(29);
+        }
+        //iargs[0]=
+        a.startAgentInPlatform("AI", "Agents.AgenteInterface",new Object[0]);
+
     }
 
     public void startAgentInPlatform(String name, String classpath, Object[] aargs) {
