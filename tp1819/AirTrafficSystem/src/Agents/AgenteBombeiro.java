@@ -11,6 +11,7 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 public class AgenteBombeiro extends Agent {
@@ -21,6 +22,9 @@ public class AgenteBombeiro extends Agent {
     private int direcaoX = 0, direcaoY = 0;
     private int velocidadeMax, fuel, fuelMax, water, waterMax;
     private boolean movingToFire, fightingFire, replenishment;
+    // zonas de abastecimento e água
+    private ArrayList<String> gasStations;
+    private ArrayList<String> waterZones;
     // listar em relação à lista de informação de aviões
     private DFAgentDescription dfdEstacoes, dfdBombeiro, dfdInterface;
     private ServiceDescription sdEstacoes, sdBombeiro, sdInterface;
@@ -42,12 +46,35 @@ public class AgenteBombeiro extends Agent {
         int identificador = (Integer) args[0]; // id único
         int type = (Integer) args[1]; // tipo de bombeiro (1-aeronave, 2-drone, 3-camioes)
         id = "type" + Integer.toString(type) + "id" + Integer.toString(identificador);
+        gasStations = (ArrayList<String>) args[2];
+        waterZones = (ArrayList<String>) args[3];
+        for (String coords : gasStations) {
+            System.out.println("Posto de abastecimento em: " + coords);
+        }
+        for (String coords : waterZones) {
+            System.out.println("Posto de água em: " + coords);
+        }
 
         // adapt velocidadeMax according to vehicle type
-        if(true) { // THIS HAS TO CHANGE
-            velocidadeMax = 5;
-            fuel = fuelMax = 15;
-            water = waterMax = 20;
+        switch(type) {
+            case 1: // aeronave
+                velocidadeMax = 5;
+                fuel = fuelMax = 15;
+                water = waterMax = 20;
+                break;
+            case 2: // drone
+                velocidadeMax = 5;
+                fuel = fuelMax = 15;
+                water = waterMax = 20;
+                break;
+            case 3: // camioes
+                velocidadeMax = 5;
+                fuel = fuelMax = 15;
+                water = waterMax = 20;
+                break;
+            default:
+                System.out.println("$ Bombeiro " + id + ": Tipo de veículo errado. TAKEDOWN.");
+                takeDown();
         }
 
         // definições de DF
@@ -85,7 +112,11 @@ public class AgenteBombeiro extends Agent {
     protected void takeDown() {
         System.out.println("$ Ending: " + id);
         super.takeDown();
-
+        try {
+            DFService.deregister(this, dfdBombeiro);
+        } catch (FIPAException e) {
+            e.printStackTrace();
+        }
     }
 
     private class EnviarInfoCentralIniciais extends OneShotBehaviour {

@@ -29,4 +29,53 @@ public class Fire {
     public boolean isFireExtinguished() {
         return !active;
     }
+
+    @Override
+    public String toString() {
+        return "id: " + id + ", " +
+                "x: " + coordX + ", " +
+                "y: " + coordY + ", " +
+                "intensidade: " + intensity + ", " +
+                "ativo: " + active;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public int getCoordX() {
+        return coordX;
+    }
+
+    public void setCoordX(int coordX) {
+        this.coordX = coordX;
+    }
+
+    public int getCoordY() {
+        return coordY;
+    }
+
+    public void setCoordY(int coordY) {
+        this.coordY = coordY;
+    }
+
+    public int getIntensity() {
+        return intensity;
+    }
+
+    public void setIntensity(int intensity) {
+        this.intensity = intensity;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
 }
