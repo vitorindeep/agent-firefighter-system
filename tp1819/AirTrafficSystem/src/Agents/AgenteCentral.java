@@ -12,6 +12,9 @@ import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
+import jess.JessException;
+import jess.Rete;
+import jess.Value;
 
 public class AgenteCentral extends Agent {
 	// listar em relação à lista de informação de aviões
@@ -55,13 +58,30 @@ public class AgenteCentral extends Agent {
 		private HashMap<Integer, Fire> fires = new HashMap<Integer, Fire>(); // all the fires
 		private HashMap<String, Bombeiro> bombeiros = new HashMap<String, Bombeiro>(); // all the bombeiros agents
 
+		// JESS
+		private Rete engine;
 
-		//
 		private int xOrigin, yOrigin;
 		private int minDistance = 1000;
 		private int taxisProcessed = 0;
 		private AID closestTaxi;
 		private String customerName;
+
+		public Receiver () {
+			engine = new Rete();
+			try {
+				engine.executeCommand("(deftemplate fire " +
+												"(slot id) " +
+												"(slot x) " +
+												"(slot y) " +
+												"(slot intensity) " +
+												"(slot active) " +
+											")");
+			} catch (JessException e) {
+				e.printStackTrace();
+			}
+
+		}
 
 		public void action() {
 			ACLMessage msg = receive();
@@ -75,6 +95,41 @@ public class AgenteCentral extends Agent {
 					int xFire = Integer.parseInt(coordinates[0]);
 					int yFire = Integer.parseInt(coordinates[1]);
 					fires.put(fireCount, new Fire(fireCount, xFire, yFire));
+					Fire newFire = new Fire(fireCount, xFire, yFire);
+					// test jess
+					try {
+
+						engine.executeCommand("(assert (fire (id " + fireCount + ") " +
+								"(x " + xFire + ") " +
+								"(y " + yFire + ") " +
+								"(intensity 1) " +
+								"(active TRUE)" +
+								"))");
+						engine.executeCommand("(facts)");
+						//engine.executeCommand("(call ?fires put " + fireCount + " ?newFire)");
+						//engine.executeCommand("(call ?fires get " + fireCount + ")");
+
+						//engine.executeCommand("(add newFire )");
+						//engine.executeCommand("(facts)");
+
+						/*
+						engine.executeCommand("(bind ?fogoNum " + fireCount+ ")");
+						engine.executeCommand("(printout t idFogo: ?fogoNum crlf)");
+
+						engine.executeCommand("(bind ?fogo " + newFire + ")");
+						engine.executeCommand("(printout t ?fogo crlf)");
+
+						engine.executeCommand("(call ?fires put ?fogoNum ?fogo)");
+						Value teste = engine.executeCommand("(call ?fires get ?fogoNum)");
+						Fire testefogo = (Fire) teste;
+
+						engine.executeCommand("(printout t (call ?fires get ?fogoNum) crlf)");
+						engine.executeCommand("(printout t ?fires crlf)");
+						*/
+					} catch (JessException e) {
+						e.printStackTrace();
+					}
+
 
 					// verificar o bombeiro mais próximo
 					Bombeiro bombeiroDisponivel = getNearestAvailableFirefighter(xFire, yFire);
