@@ -15,8 +15,8 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 
 public class AgenteCentral extends Agent {
 	// listar em relação à lista de informação de aviões
-	private DFAgentDescription dfdEstacoes, dfdBombeiros;
-	private ServiceDescription sdEstacoes, sdBombeiros;
+	private DFAgentDescription dfdEstacoes, dfdBombeiros, dfdInterface;
+	private ServiceDescription sdEstacoes, sdBombeiros, sdInterface;
 
 	protected void setup() {
 		System.out.println("$ Starting: Estação");
@@ -29,6 +29,12 @@ public class AgenteCentral extends Agent {
 		sdEstacoes.setType("Estacao");
 		sdEstacoes.setName(getLocalName());
 		dfdEstacoes.addServices(sdEstacoes);
+
+		// Para comunicação com interfaces
+		dfdInterface = new DFAgentDescription();
+		sdInterface = new ServiceDescription();
+		sdInterface.setType("Interface");
+		dfdInterface.addServices(sdInterface);
 
 		try {
 			DFService.register(this, dfdEstacoes);
@@ -76,6 +82,23 @@ public class AgenteCentral extends Agent {
 					int yFire = Integer.parseInt(coordinates[1]);
 					fires.put(fireCount, new Fire(fireCount, xFire, yFire));
 
+					// comunicar ao Agente Interface
+					try {
+						DFAgentDescription[] interfaces = DFService.search(this.myAgent, dfdInterface);
+						if (interfaces.length > 0) {
+							for (int i = 0; i < interfaces.length; ++i) {
+								DFAgentDescription dfd = interfaces[i];
+								AID interfaceAgent = dfd.getName();
+								ACLMessage newMsg = new ACLMessage(ACLMessage.CFP);
+								newMsg.addReceiver(interfaceAgent);
+								newMsg.setContent(fireCount + ";" + xFire + ";" + yFire);
+								send(newMsg);
+							}
+						}
+					} catch (FIPAException e) {
+						e.printStackTrace();
+					}
+
 					// verificar o bombeiro mais próximo
 					Bombeiro bombeiroDisponivel = getNearestAvailableFirefighter(xFire, yFire);
 					// se existe disponível, encaminhá-lo para incendio
@@ -100,6 +123,7 @@ public class AgenteCentral extends Agent {
 									newMsg.setContent(fireCount + ";" + xFire + ";" + yFire);
 									send(newMsg);
 								}
+
 							}
 						} catch (FIPAException e) {
 							e.printStackTrace();
@@ -148,6 +172,24 @@ public class AgenteCentral extends Agent {
 					// caso extinto, enviar notícia de extinção para o bombeiro responsável pelo incêndio
 					// e atualizar a nossa lista de bombeiros
 					if(fires.get(idFire).isFireExtinguished()) {
+						// inform interface
+						DFAgentDescription[] interfaces = new DFAgentDescription[0];
+						try {
+							interfaces = DFService.search(this.myAgent, dfdInterface);
+							if (interfaces.length > 0) {
+								for (int i = 0; i < interfaces.length; ++i) {
+									DFAgentDescription dfd = interfaces[i];
+									AID interfaceAgent = dfd.getName();
+									ACLMessage newMsg = new ACLMessage(ACLMessage.CONFIRM);
+									newMsg.addReceiver(interfaceAgent);
+									newMsg.setContent(String.valueOf(idFire));
+									send(newMsg);
+								}
+							}
+						} catch (FIPAException e) {
+							e.printStackTrace();
+						}
+						// inform bombeiro
 						ACLMessage reply = msg.createReply();
 						reply.setPerformative(ACLMessage.CONFIRM);
 						send(reply);

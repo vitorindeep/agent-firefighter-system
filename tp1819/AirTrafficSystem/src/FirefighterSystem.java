@@ -14,6 +14,8 @@ import java.util.Random;
 - from AgenteBombeiro to AgenteCentral - confirmar aceitação de pedido -> CONFIRM
 - from AgenteBombeiro to AgenteCentral - confirmar dispêndio de água em incêndio -> INFORM_IF
 - from AgenteCentral to AgenteBombeiro - informar fim de incendio -> CONFIRM
+- from AgenteCentral to AgenteInterface - informar incêndio a combater e coords -> CFP
+
  */
 
 public class FirefighterSystem {
@@ -42,13 +44,9 @@ public class FirefighterSystem {
 
         // criar incendiario
         a.startAgentInPlatform("AgenteIncendiario", "Agents.AgenteIncendiario", dummyAargs);
+
         // criar agente interface
-        Object[] iargs = new Object[2];
-        for (int i = 0; i < 5; i++){
-            int coordX = rand.nextInt(39);
-            int coordY = rand.nextInt(29);
-        }
-        //iargs[0]=
+
         a.startAgentInPlatform("AI", "Agents.AgenteInterface",new Object[0]);
 
     }

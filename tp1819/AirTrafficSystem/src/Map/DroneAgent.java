@@ -58,6 +58,10 @@ public class DroneAgent {
                 fuel--;
     }
 
+    public void setTexture(Texture texture) {
+        this.texture = texture;
+    }
+
     public void Draw(){
         float waterPercentage = water / startWater;
         float fuelPercentage = fuel / startFuel;

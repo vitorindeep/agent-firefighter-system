@@ -1,9 +1,6 @@
 package Agents;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 import javax.swing.text.html.HTMLDocument;
@@ -30,18 +27,22 @@ import org.lwjgl.opengl.Display;
 
 import static Map.Helpers.Artist.BeginSession;
 import static Map.Helpers.Artist.QuickLoad;
+import Map.TileType;
 
 public class AgenteInterface extends Agent {
 
     protected int map [][];
     protected TileGrid grid;
     protected DroneAgent da;
+    private Random rand;
 
     protected HashMap<String, DroneAgent> agents;
+    protected HashMap<String, DroneAgent> fire;
     protected void setup() {
         super.setup();
 
         agents = new HashMap<>();
+        fire = new HashMap<String, DroneAgent>();
         this.map = new int[][]{
                 {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
                 {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -77,8 +78,14 @@ public class AgenteInterface extends Agent {
         };
         // argumentos recebidos são:
         // 1 - localizações de pontos de água
+        for(int i = 14; i < 24 ; i++){
+            for(int j = 9; j<19; j++) {
+                map[j][i] = 2;
+            }
+        }
+
         // 2 - localizações de pontos de abastecimento
-        Object[] args = getArguments();
+        //Object[] args = getArguments();
 
         
         DFAgentDescription dfd = new DFAgentDescription();
@@ -93,9 +100,47 @@ public class AgenteInterface extends Agent {
             fe.printStackTrace();
         }
         addBehaviour(new ReceberInfoBombeiros());
-        addBehaviour(new DesenhaGrafico(this, 500));
+        addBehaviour(new ReceberInfoIncendio());
+        addBehaviour(new DesenhaGrafico(this, 60));
     }
 
+    // receber pedidos para lutar por incêndio e quando acaba
+    private class ReceberInfoIncendio extends CyclicBehaviour {
+        public void action() {
+            ACLMessage msg = receive();
+            if (msg != null) {
+                // pedido para lutar por incêndio
+                if (msg.getPerformative() == ACLMessage.CFP) {
+                    // extract fire coordinates
+                    String[] coordinates = msg.getContent().split(";");
+                    int idFire = Integer.parseInt(coordinates[0]);
+                    int xDestination = Integer.parseInt(coordinates[1]);
+                    int yDestination = Integer.parseInt(coordinates[2]);
+                    //desenhar incendio no mapa
+                    if(!fire.containsKey(Integer.toString(idFire))){
+
+                        fire.put(Integer.toString(idFire), new DroneAgent(QuickLoad("fire64"),grid.GetTile(xDestination,yDestination),32,32,2,0,0));
+                    }
+                }
+                // receber informação de incêndio apagado
+                else if (msg.getPerformative() == ACLMessage.CONFIRM) {
+                    String[] info = msg.getContent().split(";");
+                    String idFire = info[0];
+                    System.out.println("------------------------------");
+                    System.out.println(idFire);
+                    System.out.println("------------------------------");
+                    DroneAgent afgentFire = fire.get(idFire);
+                    if (afgentFire != null){
+                        System.out.println("Tou aqui!!!");
+                    }
+                    //fire.get(idFire).setTexture(QuickLoad("dirt64"));
+                }
+            } else {
+                block();
+            }
+
+        }
+    }
     // recebe as coordenadas de cada um dos agentes
     private class ReceberInfoBombeiros extends CyclicBehaviour {
         public void action() {
@@ -115,7 +160,7 @@ public class AgenteInterface extends Agent {
                 // vê id de agente, adiciona/altera no hashmap de agentes
                 if(!agents.containsKey(idAgente)){
 
-                    /*switch (idAgente){
+                    /*switch (agentType){
                         case 1:
 
                             break;
@@ -146,9 +191,11 @@ public class AgenteInterface extends Agent {
 
             BeginSession();
 
-
-
             grid = new TileGrid(map);
+//            for (int i = 0; i < 5; i++){
+//                grid.SetTile(rand.nextInt(39),rand.nextInt(29), TileType.Water);
+//            }
+
 
             //grid.SetTile(3,4, grid.GetTile(2,4).getType());
             //da = new DroneAgent(QuickLoad("drone64"),grid.GetTile(10,10),32,32,2,1000,1000);
@@ -174,9 +221,15 @@ public class AgenteInterface extends Agent {
                 //da.Update();
 
                 grid.Draw();
+
+                for(DroneAgent f : fire.values()){
+                    f.Draw();
+                }
                 for (DroneAgent da : agents.values()) {
                     da.Draw();
                 }
+
+
                 //da.Draw();
 
                 Display.update();
