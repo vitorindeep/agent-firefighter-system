@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class AgenteBombeiro extends Agent {
+    private static final int SPEED_FACTOR = 1, FUEL_FACTOR = 10;
     private String id;
     private int idFire;
     private int x, y;
@@ -45,7 +46,6 @@ public class AgenteBombeiro extends Agent {
         Object[] args = getArguments();
         int identificador = (Integer) args[0]; // id único
         int type = (Integer) args[1]; // tipo de bombeiro (1-aeronave, 2-drone, 3-camioes)
-        id = "type" + Integer.toString(type) + "id" + Integer.toString(identificador);
         gasStations = (ArrayList<String>) args[2];
         waterZones = (ArrayList<String>) args[3];
         /*
@@ -60,19 +60,22 @@ public class AgenteBombeiro extends Agent {
         // adapt velocidadeMax according to vehicle type
         switch(type) {
             case 1: // aeronave
-                velocidadeMax = 1;
-                fuel = fuelMax = 15;
-                water = waterMax = 20;
+                id = "aeronave" + Integer.toString(identificador);
+                velocidadeMax = 2 * SPEED_FACTOR;
+                fuel = fuelMax = 20 * FUEL_FACTOR;
+                water = waterMax = 15;
                 break;
             case 2: // drone
-                velocidadeMax = 1;
-                fuel = fuelMax = 15;
-                water = waterMax = 20;
+                id = "drone" + Integer.toString(identificador);
+                velocidadeMax = 4 * SPEED_FACTOR;
+                fuel = fuelMax = 5 * FUEL_FACTOR;
+                water = waterMax = 2;
                 break;
             case 3: // camioes
-                velocidadeMax = 1;
-                fuel = fuelMax = 15;
-                water = waterMax = 20;
+                id = "camiao" + Integer.toString(identificador);
+                velocidadeMax = 1 * SPEED_FACTOR;
+                fuel = fuelMax = 10 * FUEL_FACTOR;
+                water = waterMax = 10;
                 break;
             default:
                 System.out.println("$ Bombeiro " + id + ": Tipo de veículo errado. TAKEDOWN.");

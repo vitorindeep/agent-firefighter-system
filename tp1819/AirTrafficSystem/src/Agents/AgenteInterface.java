@@ -93,13 +93,14 @@ public class AgenteInterface extends Agent {
         Object[] args = getArguments();
         gasStations = (ArrayList<String>) args[0];
         waterZones = (ArrayList<String>) args[1];
+        /*
         for (String coords : gasStations) {
             System.out.println("Posto de abastecimento em: " + coords);
         }
         for (String coords : waterZones) {
             System.out.println("Posto de água em: " + coords);
         }
-
+        */
         
         DFAgentDescription dfd = new DFAgentDescription();
         dfd.setName(getAID());

@@ -50,14 +50,38 @@ public class FirefighterSystem {
         // criar estacao
         a.startAgentInPlatform("AgenteCentral", "Agents.AgenteCentral", dummyAargs);
 
-        // agentes bombeiros
-        for (int i = 0; i < 4; i++) {
+        int totalAgentes = 0; // to make the id unique in every cycle
+        int newMaxAgents = totalAgentes + 2;
+        // agentes bombeiros AERONAVE
+        for (; totalAgentes < newMaxAgents; totalAgentes++) {
             Object[] aargs = new Object[4];
-            aargs[0] = (int) i; // identificador de agente
+            aargs[0] = (int) totalAgentes; // identificador de agente
             aargs[1] = (int) 1; // tipo de agente
             aargs[2] = gasStations;
             aargs[3] = waterZones;
-            a.startAgentInPlatform("Bombeiro" + i, "Agents.AgenteBombeiro", aargs);
+            a.startAgentInPlatform("Bombeiro" + totalAgentes, "Agents.AgenteBombeiro", aargs);
+        }
+
+        // agentes bombeiros DRONE
+        newMaxAgents = totalAgentes + 10;
+        for (; totalAgentes < newMaxAgents; totalAgentes++) {
+            Object[] aargs = new Object[4];
+            aargs[0] = (int) totalAgentes; // identificador de agente
+            aargs[1] = (int) 2; // tipo de agente
+            aargs[2] = gasStations;
+            aargs[3] = waterZones;
+            a.startAgentInPlatform("Bombeiro" + totalAgentes, "Agents.AgenteBombeiro", aargs);
+        }
+
+        // agentes bombeiros CAMIAO
+        newMaxAgents = totalAgentes + 5;
+        for (; totalAgentes < newMaxAgents; totalAgentes++) {
+            Object[] aargs = new Object[4];
+            aargs[0] = (int) totalAgentes; // identificador de agente
+            aargs[1] = (int) 3; // tipo de agente
+            aargs[2] = gasStations;
+            aargs[3] = waterZones;
+            a.startAgentInPlatform("Bombeiro" + totalAgentes, "Agents.AgenteBombeiro", aargs);
         }
 
         // criar incendiario
