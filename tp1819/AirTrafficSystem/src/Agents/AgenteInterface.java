@@ -99,9 +99,8 @@ public class AgenteInterface extends Agent {
         } catch (FIPAException fe) {
             fe.printStackTrace();
         }
-        addBehaviour(new ReceberInfoBombeiros());
         addBehaviour(new ReceberInfoIncendio());
-        addBehaviour(new DesenhaGrafico(this, 60));
+        addBehaviour(new DesenhaGrafico(this, 1000));
     }
 
     // receber pedidos para lutar por incêndio e quando acaba
@@ -118,7 +117,6 @@ public class AgenteInterface extends Agent {
                     int yDestination = Integer.parseInt(coordinates[2]);
                     //desenhar incendio no mapa
                     if(!fire.containsKey(Integer.toString(idFire))){
-
                         fire.put(Integer.toString(idFire), new DroneAgent(QuickLoad("fire64"),grid.GetTile(xDestination,yDestination),32,32,2,0,0));
                     }
                 }
@@ -126,59 +124,46 @@ public class AgenteInterface extends Agent {
                 else if (msg.getPerformative() == ACLMessage.CONFIRM) {
                     String[] info = msg.getContent().split(";");
                     String idFire = info[0];
-                    System.out.println("------------------------------");
-                    System.out.println(idFire);
-                    System.out.println("------------------------------");
                     DroneAgent afgentFire = fire.get(idFire);
-                    if (afgentFire != null){
-                        System.out.println("Tou aqui!!!");
-                    }
                     //fire.get(idFire).setTexture(QuickLoad("dirt64"));
+                }
+                // recebe as coordenadas e informações de água e combustível
+                else if (msg.getPerformative() == ACLMessage.INFORM) {
+                    String[] coordsAviao = msg.getContent().split(";");
+
+                    // pegar no nome do aviao e substituir os A. AA1 -> 1
+                    //int pos = Integer.parseInt(coordsAviao[0].replace("A", ""));
+                    String idAgente = coordsAviao[0];
+                    float aviaoCoordX = Float.parseFloat(coordsAviao[1]);
+                    float aviaoCoordY = Float.parseFloat(coordsAviao[2]);
+                    int water = Integer.parseInt(coordsAviao[3]);
+                    int fuel = Integer.parseInt(coordsAviao[4]);
+                    // update structures
+                    // vê id de agente, adiciona/altera no hashmap de agentes
+                    if(!agents.containsKey(idAgente)){
+
+                /*switch (agentType){
+                    case 1:
+
+                        break;
+                    case 2:
+
+                        break;
+                    case 3:
+
+                }*/
+                        agents.put(coordsAviao[0], new DroneAgent(QuickLoad("drone64"),grid.GetTile((int)aviaoCoordX,(int)aviaoCoordY),32,32,2,water,fuel));
+                    }
+                    else
+                    {
+                        agents.get(idAgente).Update(aviaoCoordX,aviaoCoordY, water, fuel);
+                    }
+
                 }
             } else {
                 block();
             }
 
-        }
-    }
-    // recebe as coordenadas de cada um dos agentes
-    private class ReceberInfoBombeiros extends CyclicBehaviour {
-        public void action() {
-            ACLMessage msg = receive();
-            // recebe as coordenadas e informações de água e combustível
-            if (msg != null && msg.getPerformative() == ACLMessage.INFORM) {
-                String[] coordsAviao = msg.getContent().split(";");
-
-                // pegar no nome do aviao e substituir os A. AA1 -> 1
-                //int pos = Integer.parseInt(coordsAviao[0].replace("A", ""));
-                String idAgente = coordsAviao[0];
-                float aviaoCoordX = Float.parseFloat(coordsAviao[1]);
-                float aviaoCoordY = Float.parseFloat(coordsAviao[2]);
-                int water = Integer.parseInt(coordsAviao[3]);
-                int fuel = Integer.parseInt(coordsAviao[4]);
-                // update structures
-                // vê id de agente, adiciona/altera no hashmap de agentes
-                if(!agents.containsKey(idAgente)){
-
-                    /*switch (agentType){
-                        case 1:
-
-                            break;
-                        case 2:
-
-                            break;
-                        case 3:
-
-                    }*/
-                    agents.put(coordsAviao[0], new DroneAgent(QuickLoad("drone64"),grid.GetTile((int)aviaoCoordX,(int)aviaoCoordY),32,32,2,water,fuel));
-                }
-                else
-                {
-                    agents.get(idAgente).Update(aviaoCoordX,aviaoCoordY, water, fuel);
-                }
-
-            } else
-                block();
         }
     }
 

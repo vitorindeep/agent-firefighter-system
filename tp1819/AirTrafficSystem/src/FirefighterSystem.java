@@ -51,7 +51,7 @@ public class FirefighterSystem {
         a.startAgentInPlatform("AgenteCentral", "Agents.AgenteCentral", dummyAargs);
 
         // agentes bombeiros
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 4; i++) {
             Object[] aargs = new Object[4];
             aargs[0] = (int) i; // identificador de agente
             aargs[1] = (int) 1; // tipo de agente

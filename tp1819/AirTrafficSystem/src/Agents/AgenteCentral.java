@@ -102,40 +102,6 @@ public class AgenteCentral extends Agent {
 					int yFire = Integer.parseInt(coordinates[1]);
 					fires.put(fireCount, new Fire(fireCount, xFire, yFire));
 					Fire newFire = new Fire(fireCount, xFire, yFire);
-					// test jess
-					try {
-
-						engine.executeCommand("(assert (fire (id " + fireCount + ") " +
-								"(x " + xFire + ") " +
-								"(y " + yFire + ") " +
-								"(intensity 1) " +
-								"(active TRUE)" +
-								"))");
-						engine.executeCommand("(facts)");
-						//engine.executeCommand("(call ?fires put " + fireCount + " ?newFire)");
-						//engine.executeCommand("(call ?fires get " + fireCount + ")");
-
-						//engine.executeCommand("(add newFire )");
-						//engine.executeCommand("(facts)");
-
-						/*
-						engine.executeCommand("(bind ?fogoNum " + fireCount+ ")");
-						engine.executeCommand("(printout t idFogo: ?fogoNum crlf)");
-
-						engine.executeCommand("(bind ?fogo " + newFire + ")");
-						engine.executeCommand("(printout t ?fogo crlf)");
-
-						engine.executeCommand("(call ?fires put ?fogoNum ?fogo)");
-						Value teste = engine.executeCommand("(call ?fires get ?fogoNum)");
-						Fire testefogo = (Fire) teste;
-
-						engine.executeCommand("(printout t (call ?fires get ?fogoNum) crlf)");
-						engine.executeCommand("(printout t ?fires crlf)");
-						*/
-					} catch (JessException e) {
-						e.printStackTrace();
-					}
-
 
 					// comunicar ao Agente Interface
 					try {
@@ -187,6 +153,39 @@ public class AgenteCentral extends Agent {
 					else {
 						System.out.println("$ Estação: Nenhum bombeiro disponível para o combate ao fogo.");
 					}
+
+                    // test jess
+                    try {
+                        engine.executeCommand("(assert (fire (id " + fireCount + ") " +
+                                "(x " + xFire + ") " +
+                                "(y " + yFire + ") " +
+                                "(intensity 1) " +
+                                "(active TRUE)" +
+                                "))");
+                        engine.executeCommand("(facts)");
+                        //engine.executeCommand("(call ?fires put " + fireCount + " ?newFire)");
+                        //engine.executeCommand("(call ?fires get " + fireCount + ")");
+
+                        //engine.executeCommand("(add newFire )");
+                        //engine.executeCommand("(facts)");
+
+						/*
+						engine.executeCommand("(bind ?fogoNum " + fireCount+ ")");
+						engine.executeCommand("(printout t idFogo: ?fogoNum crlf)");
+
+						engine.executeCommand("(bind ?fogo " + newFire + ")");
+						engine.executeCommand("(printout t ?fogo crlf)");
+
+						engine.executeCommand("(call ?fires put ?fogoNum ?fogo)");
+						Value teste = engine.executeCommand("(call ?fires get ?fogoNum)");
+						Fire testefogo = (Fire) teste;
+
+						engine.executeCommand("(printout t (call ?fires get ?fogoNum) crlf)");
+						engine.executeCommand("(printout t ?fires crlf)");
+						*/
+                    } catch (JessException e) {
+                        e.printStackTrace();
+                    }
 				}
 				// mensagem proveniente de Bombeiro a informar Coordenadas e Estado quando em modo ATIVO
 				// só é enviada esta mensagem depois de uma CFP por parte do Central
@@ -201,10 +200,12 @@ public class AgenteCentral extends Agent {
 					String idBombeiro = infos[5];
 					int waterBombeiro = Integer.parseInt(infos[6]);
 					int fuelBombeiro = Integer.parseInt(infos[7]);
+					/*
 					System.out.println("$ Estação: Informações de Bombeiro! -> id: " + idBombeiro + ", x: " + xBombeiro + ", y: " + yBombeiro +
 							", moving: " + movingBombeiro + ", fighting: " + fightingBombeiro +
 							", replanishment: " + replanishmentBombeiro +
 							", water: " + waterBombeiro + ", fuel: " + fuelBombeiro);
+                    */
 					// se existe, atualizar
 					if (bombeiros.containsKey(idBombeiro)) {
 						bombeiros.replace(idBombeiro, new Bombeiro(idBombeiro, xBombeiro, yBombeiro, movingBombeiro, fightingBombeiro, replanishmentBombeiro));

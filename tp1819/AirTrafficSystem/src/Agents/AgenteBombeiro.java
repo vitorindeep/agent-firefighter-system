@@ -48,27 +48,29 @@ public class AgenteBombeiro extends Agent {
         id = "type" + Integer.toString(type) + "id" + Integer.toString(identificador);
         gasStations = (ArrayList<String>) args[2];
         waterZones = (ArrayList<String>) args[3];
+        /*
         for (String coords : gasStations) {
             System.out.println("Posto de abastecimento em: " + coords);
         }
         for (String coords : waterZones) {
             System.out.println("Posto de água em: " + coords);
         }
+        */
 
         // adapt velocidadeMax according to vehicle type
         switch(type) {
             case 1: // aeronave
-                velocidadeMax = 5;
+                velocidadeMax = 1;
                 fuel = fuelMax = 15;
                 water = waterMax = 20;
                 break;
             case 2: // drone
-                velocidadeMax = 5;
+                velocidadeMax = 1;
                 fuel = fuelMax = 15;
                 water = waterMax = 20;
                 break;
             case 3: // camioes
-                velocidadeMax = 5;
+                velocidadeMax = 1;
                 fuel = fuelMax = 15;
                 water = waterMax = 20;
                 break;
@@ -171,6 +173,25 @@ public class AgenteBombeiro extends Agent {
             } catch (FIPAException fe) {
                 fe.printStackTrace();
             }
+
+            // informação para interface
+            try {
+                // procurar interfaces registadas
+                DFAgentDescription[] r = DFService.search(this.myAgent, dfdInterface);
+                if (r.length > 0) {
+                    // enviar mensagem com nome, coordX e coordY para todas as interfaces registadas
+                    for (int i = 0; i < r.length; ++i) {
+                        DFAgentDescription interf = r[i];
+                        AID interfName = interf.getName();
+                        ACLMessage m = new ACLMessage(ACLMessage.INFORM);
+                        m.addReceiver(interfName);
+                        m.setContent(id+";"+x+";"+y+";"+water+";"+fuel);
+                        send(m);
+                    }
+                }
+            } catch (FIPAException fe) {
+                fe.printStackTrace();
+            }
         }
     }
 
@@ -243,25 +264,6 @@ public class AgenteBombeiro extends Agent {
                 int newX = x+velocidadeMax*direcaoX;
                 int newY = y+velocidadeMax*direcaoY;
                 checkIfDestinationAchieved(newX, newY);
-
-                // informação para interface
-                try {
-                    // procurar interfaces registadas
-                    DFAgentDescription[] r = DFService.search(this.myAgent, dfdInterface);
-                    if (r.length > 0) {
-                        // enviar mensagem com nome, coordX e coordY para todas as interfaces registadas
-                        for (int i = 0; i < r.length; ++i) {
-                            DFAgentDescription interf = r[i];
-                            AID interfName = interf.getName();
-                            ACLMessage m = new ACLMessage(ACLMessage.INFORM);
-                            m.addReceiver(interfName);
-                            m.setContent(id+";"+x+";"+y+";"+water+";"+fuel);
-                            send(m);
-                        }
-                    }
-                } catch (FIPAException fe) {
-                    fe.printStackTrace();
-                }
                 /*
                 System.out.println("Para Interface: id: " + id + ", " +
                         "x: " + x + ", " +
