@@ -64,8 +64,10 @@ public class FirefighterSystem {
         a.startAgentInPlatform("AgenteIncendiario", "Agents.AgenteIncendiario", dummyAargs);
 
         // criar agente interface
-
-        a.startAgentInPlatform("AI", "Agents.AgenteInterface",new Object[0]);
+        Object[] aargs = new Object[2];
+        aargs[0] = gasStations;
+        aargs[1] = waterZones;
+        a.startAgentInPlatform("AI", "Agents.AgenteInterface", aargs);
 
     }
 

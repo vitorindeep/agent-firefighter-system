@@ -38,6 +38,10 @@ public class AgenteInterface extends Agent {
 
     protected HashMap<String, DroneAgent> agents;
     protected HashMap<String, DroneAgent> fire;
+
+    private ArrayList<String> gasStations;
+    private ArrayList<String> waterZones;
+
     protected void setup() {
         super.setup();
 
@@ -85,7 +89,16 @@ public class AgenteInterface extends Agent {
         }
 
         // 2 - localizações de pontos de abastecimento
-        //Object[] args = getArguments();
+        // ["1;23", "13;4", ...]
+        Object[] args = getArguments();
+        gasStations = (ArrayList<String>) args[0];
+        waterZones = (ArrayList<String>) args[1];
+        for (String coords : gasStations) {
+            System.out.println("Posto de abastecimento em: " + coords);
+        }
+        for (String coords : waterZones) {
+            System.out.println("Posto de água em: " + coords);
+        }
 
         
         DFAgentDescription dfd = new DFAgentDescription();
