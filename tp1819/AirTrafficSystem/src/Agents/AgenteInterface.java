@@ -6,6 +6,7 @@ import javax.swing.WindowConstants;
 import javax.swing.text.html.HTMLDocument;
 
 import Map.DroneAgent;
+import Map.Fire;
 import Map.Helpers.Clock;
 import Map.TileGrid;
 import jade.core.behaviours.TickerBehaviour;
@@ -37,12 +38,12 @@ public class AgenteInterface extends Agent {
     private Random rand;
 
     protected HashMap<String, DroneAgent> agents;
-    protected HashMap<String, DroneAgent> fire;
+    protected HashMap<String, Fire> fire;
     protected void setup() {
         super.setup();
 
         agents = new HashMap<>();
-        fire = new HashMap<String, DroneAgent>();
+        fire = new HashMap<>();
         this.map = new int[][]{
                 {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
                 {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -101,7 +102,7 @@ public class AgenteInterface extends Agent {
         }
         addBehaviour(new ReceberInfoBombeiros());
         addBehaviour(new ReceberInfoIncendio());
-        addBehaviour(new DesenhaGrafico(this, 60));
+        addBehaviour(new DesenhaGrafico(this, 500));
     }
 
     // receber pedidos para lutar por incêndio e quando acaba
@@ -119,21 +120,15 @@ public class AgenteInterface extends Agent {
                     //desenhar incendio no mapa
                     if(!fire.containsKey(Integer.toString(idFire))){
 
-                        fire.put(Integer.toString(idFire), new DroneAgent(QuickLoad("fire64"),grid.GetTile(xDestination,yDestination),32,32,2,0,0));
+                        fire.put(Integer.toString(idFire), new Fire(QuickLoad("fire64"),grid.GetTile(xDestination,yDestination),32,32));
                     }
                 }
                 // receber informação de incêndio apagado
                 else if (msg.getPerformative() == ACLMessage.CONFIRM) {
                     String[] info = msg.getContent().split(";");
                     String idFire = info[0];
-                    System.out.println("------------------------------");
-                    System.out.println(idFire);
-                    System.out.println("------------------------------");
-                    DroneAgent afgentFire = fire.get(idFire);
-                    if (afgentFire != null){
-                        System.out.println("Tou aqui!!!");
-                    }
-                    //fire.get(idFire).setTexture(QuickLoad("dirt64"));
+
+//                    fire.get(idFire).Update(QuickLoad("dirt64"));
                 }
             } else {
                 block();
@@ -222,7 +217,7 @@ public class AgenteInterface extends Agent {
 
                 grid.Draw();
 
-                for(DroneAgent f : fire.values()){
+                for(Fire f : fire.values()){
                     f.Draw();
                 }
                 for (DroneAgent da : agents.values()) {

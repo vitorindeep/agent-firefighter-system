@@ -74,7 +74,7 @@ public class Artist {
 
     public static Texture QuickLoad(String fileName){
         Texture tex = null;
-        tex = LoadTexture("tp1819/AirTrafficSystem/src/Map/Res/" + fileName + ".png", "PNG");
+        tex = LoadTexture("src/Map/Res/" + fileName + ".png", "PNG");
         return tex;
     }
 }
