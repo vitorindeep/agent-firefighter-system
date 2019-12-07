@@ -38,7 +38,15 @@ public class AgenteInterface extends Agent {
     private Random rand;
 
     protected HashMap<String, DroneAgent> agents;
+<<<<<<< HEAD
     protected HashMap<String, Fire> fire;
+=======
+    protected HashMap<String, DroneAgent> fire;
+
+    private ArrayList<String> gasStations;
+    private ArrayList<String> waterZones;
+
+>>>>>>> c8dd167bba35245b8c199ce9518e7ec97f3c0117
     protected void setup() {
         super.setup();
 
@@ -86,8 +94,18 @@ public class AgenteInterface extends Agent {
         }
 
         // 2 - localizações de pontos de abastecimento
-        //Object[] args = getArguments();
-
+        // ["1;23", "13;4", ...]
+        Object[] args = getArguments();
+        gasStations = (ArrayList<String>) args[0];
+        waterZones = (ArrayList<String>) args[1];
+        /*
+        for (String coords : gasStations) {
+            System.out.println("Posto de abastecimento em: " + coords);
+        }
+        for (String coords : waterZones) {
+            System.out.println("Posto de água em: " + coords);
+        }
+        */
         
         DFAgentDescription dfd = new DFAgentDescription();
         dfd.setName(getAID());
@@ -100,9 +118,12 @@ public class AgenteInterface extends Agent {
         } catch (FIPAException fe) {
             fe.printStackTrace();
         }
-        addBehaviour(new ReceberInfoBombeiros());
         addBehaviour(new ReceberInfoIncendio());
+<<<<<<< HEAD
         addBehaviour(new DesenhaGrafico(this, 500));
+=======
+        addBehaviour(new DesenhaGrafico(this, 1000));
+>>>>>>> c8dd167bba35245b8c199ce9518e7ec97f3c0117
     }
 
     // receber pedidos para lutar por incêndio e quando acaba
@@ -119,61 +140,63 @@ public class AgenteInterface extends Agent {
                     int yDestination = Integer.parseInt(coordinates[2]);
                     //desenhar incendio no mapa
                     if(!fire.containsKey(Integer.toString(idFire))){
+<<<<<<< HEAD
 
                         fire.put(Integer.toString(idFire), new Fire(QuickLoad("fire64"),grid.GetTile(xDestination,yDestination),32,32));
+=======
+                        fire.put(Integer.toString(idFire), new DroneAgent(QuickLoad("fire64"),grid.GetTile(xDestination,yDestination),32,32,2,0,0));
+>>>>>>> c8dd167bba35245b8c199ce9518e7ec97f3c0117
                     }
                 }
                 // receber informação de incêndio apagado
                 else if (msg.getPerformative() == ACLMessage.CONFIRM) {
                     String[] info = msg.getContent().split(";");
                     String idFire = info[0];
+<<<<<<< HEAD
 
 //                    fire.get(idFire).Update(QuickLoad("dirt64"));
+=======
+                    DroneAgent afgentFire = fire.get(idFire);
+                    //fire.get(idFire).setTexture(QuickLoad("dirt64"));
+>>>>>>> c8dd167bba35245b8c199ce9518e7ec97f3c0117
+                }
+                // recebe as coordenadas e informações de água e combustível
+                else if (msg.getPerformative() == ACLMessage.INFORM) {
+                    String[] coordsAviao = msg.getContent().split(";");
+
+                    // pegar no nome do aviao e substituir os A. AA1 -> 1
+                    //int pos = Integer.parseInt(coordsAviao[0].replace("A", ""));
+                    String idAgente = coordsAviao[0];
+                    float aviaoCoordX = Float.parseFloat(coordsAviao[1]);
+                    float aviaoCoordY = Float.parseFloat(coordsAviao[2]);
+                    int water = Integer.parseInt(coordsAviao[3]);
+                    int fuel = Integer.parseInt(coordsAviao[4]);
+                    // update structures
+                    // vê id de agente, adiciona/altera no hashmap de agentes
+                    if(!agents.containsKey(idAgente)){
+
+                /*switch (agentType){
+                    case 1:
+
+                        break;
+                    case 2:
+
+                        break;
+                    case 3:
+
+                }*/
+                        agents.put(coordsAviao[0], new DroneAgent(QuickLoad("drone64"),grid.GetTile((int)aviaoCoordX,(int)aviaoCoordY),32,32,2,water,fuel));
+                    }
+                    else
+                    {
+                        agents.get(idAgente).Update(aviaoCoordX,aviaoCoordY, water, fuel);
+                    }
+
                 }
             } else {
                 block();
             }
 
-        }
-    }
-    // recebe as coordenadas de cada um dos agentes
-    private class ReceberInfoBombeiros extends CyclicBehaviour {
-        public void action() {
-            ACLMessage msg = receive();
-            // recebe as coordenadas e informações de água e combustível
-            if (msg != null && msg.getPerformative() == ACLMessage.INFORM) {
-                String[] coordsAviao = msg.getContent().split(";");
-
-                // pegar no nome do aviao e substituir os A. AA1 -> 1
-                //int pos = Integer.parseInt(coordsAviao[0].replace("A", ""));
-                String idAgente = coordsAviao[0];
-                float aviaoCoordX = Float.parseFloat(coordsAviao[1]);
-                float aviaoCoordY = Float.parseFloat(coordsAviao[2]);
-                int water = Integer.parseInt(coordsAviao[3]);
-                int fuel = Integer.parseInt(coordsAviao[4]);
-                // update structures
-                // vê id de agente, adiciona/altera no hashmap de agentes
-                if(!agents.containsKey(idAgente)){
-
-                    /*switch (agentType){
-                        case 1:
-
-                            break;
-                        case 2:
-
-                            break;
-                        case 3:
-
-                    }*/
-                    agents.put(coordsAviao[0], new DroneAgent(QuickLoad("drone64"),grid.GetTile((int)aviaoCoordX,(int)aviaoCoordY),32,32,2,water,fuel));
-                }
-                else
-                {
-                    agents.get(idAgente).Update(aviaoCoordX,aviaoCoordY, water, fuel);
-                }
-
-            } else
-                block();
         }
     }
 

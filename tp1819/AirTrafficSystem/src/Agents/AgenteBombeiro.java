@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class AgenteBombeiro extends Agent {
+    private static final int SPEED_FACTOR = 1, FUEL_FACTOR = 10;
     private String id;
     private int idFire;
     private int x, y;
@@ -45,32 +46,36 @@ public class AgenteBombeiro extends Agent {
         Object[] args = getArguments();
         int identificador = (Integer) args[0]; // id único
         int type = (Integer) args[1]; // tipo de bombeiro (1-aeronave, 2-drone, 3-camioes)
-        id = "type" + Integer.toString(type) + "id" + Integer.toString(identificador);
         gasStations = (ArrayList<String>) args[2];
         waterZones = (ArrayList<String>) args[3];
+        /*
         for (String coords : gasStations) {
             System.out.println("Posto de abastecimento em: " + coords);
         }
         for (String coords : waterZones) {
             System.out.println("Posto de água em: " + coords);
         }
+        */
 
         // adapt velocidadeMax according to vehicle type
         switch(type) {
             case 1: // aeronave
-                velocidadeMax = 5;
-                fuel = fuelMax = 15;
-                water = waterMax = 20;
+                id = "aeronave" + Integer.toString(identificador);
+                velocidadeMax = 2 * SPEED_FACTOR;
+                fuel = fuelMax = 20 * FUEL_FACTOR;
+                water = waterMax = 15;
                 break;
             case 2: // drone
-                velocidadeMax = 5;
-                fuel = fuelMax = 15;
-                water = waterMax = 20;
+                id = "drone" + Integer.toString(identificador);
+                velocidadeMax = 4 * SPEED_FACTOR;
+                fuel = fuelMax = 5 * FUEL_FACTOR;
+                water = waterMax = 2;
                 break;
             case 3: // camioes
-                velocidadeMax = 5;
-                fuel = fuelMax = 15;
-                water = waterMax = 20;
+                id = "camiao" + Integer.toString(identificador);
+                velocidadeMax = 1 * SPEED_FACTOR;
+                fuel = fuelMax = 10 * FUEL_FACTOR;
+                water = waterMax = 10;
                 break;
             default:
                 System.out.println("$ Bombeiro " + id + ": Tipo de veículo errado. TAKEDOWN.");
@@ -171,6 +176,25 @@ public class AgenteBombeiro extends Agent {
             } catch (FIPAException fe) {
                 fe.printStackTrace();
             }
+
+            // informação para interface
+            try {
+                // procurar interfaces registadas
+                DFAgentDescription[] r = DFService.search(this.myAgent, dfdInterface);
+                if (r.length > 0) {
+                    // enviar mensagem com nome, coordX e coordY para todas as interfaces registadas
+                    for (int i = 0; i < r.length; ++i) {
+                        DFAgentDescription interf = r[i];
+                        AID interfName = interf.getName();
+                        ACLMessage m = new ACLMessage(ACLMessage.INFORM);
+                        m.addReceiver(interfName);
+                        m.setContent(id+";"+x+";"+y+";"+water+";"+fuel);
+                        send(m);
+                    }
+                }
+            } catch (FIPAException fe) {
+                fe.printStackTrace();
+            }
         }
     }
 
@@ -243,25 +267,6 @@ public class AgenteBombeiro extends Agent {
                 int newX = x+velocidadeMax*direcaoX;
                 int newY = y+velocidadeMax*direcaoY;
                 checkIfDestinationAchieved(newX, newY);
-
-                // informação para interface
-                try {
-                    // procurar interfaces registadas
-                    DFAgentDescription[] r = DFService.search(this.myAgent, dfdInterface);
-                    if (r.length > 0) {
-                        // enviar mensagem com nome, coordX e coordY para todas as interfaces registadas
-                        for (int i = 0; i < r.length; ++i) {
-                            DFAgentDescription interf = r[i];
-                            AID interfName = interf.getName();
-                            ACLMessage m = new ACLMessage(ACLMessage.INFORM);
-                            m.addReceiver(interfName);
-                            m.setContent(id+";"+x+";"+y+";"+water+";"+fuel);
-                            send(m);
-                        }
-                    }
-                } catch (FIPAException fe) {
-                    fe.printStackTrace();
-                }
                 /*
                 System.out.println("Para Interface: id: " + id + ", " +
                         "x: " + x + ", " +
