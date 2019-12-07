@@ -4,6 +4,9 @@ import jade.core.Runtime;
 import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 
+import java.util.ArrayList;
+import java.util.Random;
+
 /*
 - from AgenteIncendiario to AgenteCentral - informar coordenadas novo fogo -> INFORM
 - from AgenteBombeiro to AgenteInterface - informar coordenadas atuais -> INFORM
@@ -22,16 +25,34 @@ public class FirefighterSystem {
     public static void main(String[] args) {
         FirefighterSystem a = new FirefighterSystem();
         a.initMainContainerInPlatform("localhost", "9888", "FirefighterSystem");
+
+        // initializations
         Object[] dummyAargs = new Object[0];
+        Random rand = new Random();
+
+        // criar arraylist com posições de postos de abastecimento
+        ArrayList<String> gasStations = new ArrayList<String>();
+        gasStations.add(rand.nextInt(19) + ";" + rand.nextInt(14)); // ESQ BAIXO
+        gasStations.add(rand.nextInt(19) + ";" + (rand.nextInt(14) + 15)); // ESQ CIMA
+        gasStations.add((rand.nextInt(19) + 20) + ";" + rand.nextInt(14)); // DIREITA BAIXO
+        gasStations.add((rand.nextInt(19) + 20) + ";" + (rand.nextInt(14) + 15)); // DIREITA CIMA
+
+        // criar arraylist com posições de postos de abastecimento
+        ArrayList<String> waterZones = new ArrayList<String>();
+        for (int i = 0; i < 6; i++) {
+            waterZones.add(rand.nextInt(39) + ";" + rand.nextInt(29));
+        }
 
         // criar estacao
         a.startAgentInPlatform("AgenteCentral", "Agents.AgenteCentral", dummyAargs);
 
         // agentes bombeiros
         for (int i = 0; i < 1; i++) {
-            Object[] aargs = new Object[2];
+            Object[] aargs = new Object[4];
             aargs[0] = (int) i; // identificador de agente
             aargs[1] = (int) 1; // tipo de agente
+            aargs[2] = gasStations;
+            aargs[3] = waterZones;
             a.startAgentInPlatform("Bombeiro" + i, "Agents.AgenteBombeiro", aargs);
         }
 
