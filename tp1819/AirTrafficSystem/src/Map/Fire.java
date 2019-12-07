@@ -6,10 +6,8 @@ import static Map.Helpers.Artist.DrawQuadTex;
 public class Fire {
 
     private int width, height;
-    private float speed, x, y, water, fuel, startWater, startFuel;
+    private float x, y;
     private Texture texture;
-    private Tile startTile;
-    private boolean first = true;
 
     public Fire(Texture texture, Tile startTile, int width, int height){
         this.texture = texture;
@@ -22,9 +20,6 @@ public class Fire {
 
 
     public void Update(Texture texture){
-        if(first)
-            first = false;
-        else
           this.texture = texture;
     }
 

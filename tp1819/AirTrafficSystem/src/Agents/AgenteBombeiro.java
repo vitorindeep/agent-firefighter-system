@@ -17,7 +17,7 @@ import java.util.Random;
 public class AgenteBombeiro extends Agent {
     private static final int SPEED_FACTOR = 1, FUEL_FACTOR = 10;
     private String id;
-    private int idFire;
+    private int idFire, type;
     private int x, y;
     private int xDestination, yDestination;
     private int direcaoX = 0, direcaoY = 0;
@@ -45,7 +45,7 @@ public class AgenteBombeiro extends Agent {
         // ler argumentos para criar novo AgenteBombeiro
         Object[] args = getArguments();
         int identificador = (Integer) args[0]; // id único
-        int type = (Integer) args[1]; // tipo de bombeiro (1-aeronave, 2-drone, 3-camioes)
+        type = (Integer) args[1]; // tipo de bombeiro (1-aeronave, 2-drone, 3-camioes)
         gasStations = (ArrayList<String>) args[2];
         waterZones = (ArrayList<String>) args[3];
         /*
@@ -188,7 +188,7 @@ public class AgenteBombeiro extends Agent {
                         AID interfName = interf.getName();
                         ACLMessage m = new ACLMessage(ACLMessage.INFORM);
                         m.addReceiver(interfName);
-                        m.setContent(id+";"+x+";"+y+";"+water+";"+fuel);
+                        m.setContent(id+";"+x+";"+y+";"+water+";"+fuel+";"+type);
                         send(m);
                     }
                 }

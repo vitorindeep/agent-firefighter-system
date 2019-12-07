@@ -29,6 +29,9 @@ public class TileGrid {
                     case 2:
                         map[i][j] = new Tile(i * 32, j * 32, 32, 32, TileType.Water);
                         break;
+                    case 3:
+                        map[i][j] = new Tile(i * 32, j * 32, 32, 32, TileType.Gas);
+                        break;
                 }
 
             }

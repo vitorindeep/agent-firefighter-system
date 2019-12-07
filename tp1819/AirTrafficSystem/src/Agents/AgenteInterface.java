@@ -38,15 +38,10 @@ public class AgenteInterface extends Agent {
     private Random rand;
 
     protected HashMap<String, DroneAgent> agents;
-<<<<<<< HEAD
     protected HashMap<String, Fire> fire;
-=======
-    protected HashMap<String, DroneAgent> fire;
-
     private ArrayList<String> gasStations;
     private ArrayList<String> waterZones;
 
->>>>>>> c8dd167bba35245b8c199ce9518e7ec97f3c0117
     protected void setup() {
         super.setup();
 
@@ -86,27 +81,29 @@ public class AgenteInterface extends Agent {
 
         };
         // argumentos recebidos são:
+        Object[] args = getArguments();
         // 1 - localizações de pontos de água
-        for(int i = 14; i < 24 ; i++){
-            for(int j = 9; j<19; j++) {
-                map[j][i] = 2;
-            }
+        waterZones = (ArrayList<String>) args[1];
+        for (String coords : waterZones) {
+            //System.out.println("Posto de água em: " + coords);
+            String[] wCoord = coords.split(";");
+            map[Integer.parseInt(wCoord[1])][Integer.parseInt(wCoord[0])] = 2;
         }
 
+//        for(int i = 14; i < 24 ; i++){
+//            for(int j = 9; j<19; j++) {
+//                map[j][i] = 2;
+//            }
+//        }
+
         // 2 - localizações de pontos de abastecimento
-        // ["1;23", "13;4", ...]
-        Object[] args = getArguments();
         gasStations = (ArrayList<String>) args[0];
-        waterZones = (ArrayList<String>) args[1];
-        /*
         for (String coords : gasStations) {
-            System.out.println("Posto de abastecimento em: " + coords);
+            //System.out.println("Posto de abastecimento em: " + coords);
+            String[] gCoord = coords.split(";");
+            map[Integer.parseInt(gCoord[1])][Integer.parseInt(gCoord[0])] = 3;
         }
-        for (String coords : waterZones) {
-            System.out.println("Posto de água em: " + coords);
-        }
-        */
-        
+
         DFAgentDescription dfd = new DFAgentDescription();
         dfd.setName(getAID());
         ServiceDescription sd = new ServiceDescription();
@@ -119,11 +116,7 @@ public class AgenteInterface extends Agent {
             fe.printStackTrace();
         }
         addBehaviour(new ReceberInfoIncendio());
-<<<<<<< HEAD
-        addBehaviour(new DesenhaGrafico(this, 500));
-=======
         addBehaviour(new DesenhaGrafico(this, 1000));
->>>>>>> c8dd167bba35245b8c199ce9518e7ec97f3c0117
     }
 
     // receber pedidos para lutar por incêndio e quando acaba
@@ -140,53 +133,53 @@ public class AgenteInterface extends Agent {
                     int yDestination = Integer.parseInt(coordinates[2]);
                     //desenhar incendio no mapa
                     if(!fire.containsKey(Integer.toString(idFire))){
-<<<<<<< HEAD
-
                         fire.put(Integer.toString(idFire), new Fire(QuickLoad("fire64"),grid.GetTile(xDestination,yDestination),32,32));
-=======
-                        fire.put(Integer.toString(idFire), new DroneAgent(QuickLoad("fire64"),grid.GetTile(xDestination,yDestination),32,32,2,0,0));
->>>>>>> c8dd167bba35245b8c199ce9518e7ec97f3c0117
+
                     }
                 }
                 // receber informação de incêndio apagado
                 else if (msg.getPerformative() == ACLMessage.CONFIRM) {
-                    String[] info = msg.getContent().split(";");
-                    String idFire = info[0];
-<<<<<<< HEAD
+                    String info = msg.getContent();
+                    String idFire = info;
 
+                    if(fire.containsKey(idFire)){
+                        fire.get(idFire).Update(QuickLoad("dirt64"));
+                    }
 //                    fire.get(idFire).Update(QuickLoad("dirt64"));
-=======
-                    DroneAgent afgentFire = fire.get(idFire);
-                    //fire.get(idFire).setTexture(QuickLoad("dirt64"));
->>>>>>> c8dd167bba35245b8c199ce9518e7ec97f3c0117
                 }
                 // recebe as coordenadas e informações de água e combustível
                 else if (msg.getPerformative() == ACLMessage.INFORM) {
                     String[] coordsAviao = msg.getContent().split(";");
-
                     // pegar no nome do aviao e substituir os A. AA1 -> 1
                     //int pos = Integer.parseInt(coordsAviao[0].replace("A", ""));
+
                     String idAgente = coordsAviao[0];
                     float aviaoCoordX = Float.parseFloat(coordsAviao[1]);
                     float aviaoCoordY = Float.parseFloat(coordsAviao[2]);
                     int water = Integer.parseInt(coordsAviao[3]);
                     int fuel = Integer.parseInt(coordsAviao[4]);
+                    int agentType = Integer.parseInt(coordsAviao[5]);
                     // update structures
                     // vê id de agente, adiciona/altera no hashmap de agentes
                     if(!agents.containsKey(idAgente)){
 
-                /*switch (agentType){
+                switch (agentType){
                     case 1:
+                        //aeronave
+                        agents.put(coordsAviao[0], new DroneAgent(QuickLoad("helicopter64"),grid.GetTile((int)aviaoCoordX,(int)aviaoCoordY),32,32,2,water,fuel));
 
                         break;
                     case 2:
+                        //drone
+                        agents.put(coordsAviao[0], new DroneAgent(QuickLoad("drone64"),grid.GetTile((int)aviaoCoordX,(int)aviaoCoordY),32,32,2,water,fuel));
 
                         break;
                     case 3:
+                        //camião
+                        agents.put(coordsAviao[0], new DroneAgent(QuickLoad("truck64"),grid.GetTile((int)aviaoCoordX,(int)aviaoCoordY),32,32,2,water,fuel));
 
-                }*/
-                        agents.put(coordsAviao[0], new DroneAgent(QuickLoad("drone64"),grid.GetTile((int)aviaoCoordX,(int)aviaoCoordY),32,32,2,water,fuel));
-                    }
+                }
+                        }
                     else
                     {
                         agents.get(idAgente).Update(aviaoCoordX,aviaoCoordY, water, fuel);
