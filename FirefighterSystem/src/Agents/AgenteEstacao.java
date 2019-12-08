@@ -16,7 +16,7 @@ import jess.JessException;
 import jess.Rete;
 import jess.Value;
 
-public class AgenteCentral extends Agent {
+public class AgenteEstacao extends Agent {
 	// listar em relação à lista de informação de aviões
 	private DFAgentDescription dfdEstacoes, dfdBombeiros, dfdInterface;
 	private ServiceDescription sdEstacoes, sdBombeiros, sdInterface;

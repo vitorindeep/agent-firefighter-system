@@ -8,14 +8,14 @@ import java.util.ArrayList;
 import java.util.Random;
 
 /*
-- from AgenteIncendiario to AgenteCentral - informar coordenadas novo fogo -> INFORM
+- from AgenteIncendiario to AgenteEstacao - informar coordenadas novo fogo -> INFORM
 - from AgenteBombeiro to AgenteInterface - informar coordenadas atuais -> INFORM
-- from AgenteBombeiro to AgenteCentral - informar coordenadas e estado de bombeiro -> PROPOSE
-- from AgenteCentral to AgenteBombeiro - informar incêndio a combater e coords -> CFP
-- from AgenteBombeiro to AgenteCentral - confirmar aceitação de pedido -> CONFIRM
-- from AgenteBombeiro to AgenteCentral - confirmar dispêndio de água em incêndio -> INFORM_IF
-- from AgenteCentral to AgenteBombeiro - informar fim de incendio -> CONFIRM
-- from AgenteCentral to AgenteInterface - informar incêndio a combater e coords -> CFP
+- from AgenteBombeiro to AgenteEstacao - informar coordenadas e estado de bombeiro -> PROPOSE
+- from AgenteEstacao to AgenteBombeiro - informar incêndio a combater e coords -> CFP
+- from AgenteBombeiro to AgenteEstacao - confirmar aceitação de pedido -> CONFIRM
+- from AgenteBombeiro to AgenteEstacao - confirmar dispêndio de água em incêndio -> INFORM_IF
+- from AgenteEstacao to AgenteBombeiro - informar fim de incendio -> CONFIRM
+- from AgenteEstacao to AgenteInterface - informar incêndio a combater e coords -> CFP
 
  */
 
@@ -48,7 +48,7 @@ public class FirefighterSystem {
 
 
         // criar estacao
-        a.startAgentInPlatform("AgenteCentral", "Agents.AgenteCentral", dummyAargs);
+        a.startAgentInPlatform("AgenteEstacao", "Agents.AgenteEstacao", dummyAargs);
 
         int totalAgentes = 0; // to make the id unique in every cycle
         int newMaxAgents = totalAgentes + 2; // mais 2 que os existentes

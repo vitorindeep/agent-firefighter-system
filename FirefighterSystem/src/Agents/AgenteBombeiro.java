@@ -144,7 +144,7 @@ public class AgenteBombeiro extends Agent {
         }
     }
 
-    // enviar coordenadas e estado de 1 em 1 seg para o AgenteCentral
+    // enviar coordenadas e estado de 1 em 1 seg para o AgenteEstacao
     private class EnviarInfoCentral extends TickerBehaviour {
 
         public EnviarInfoCentral(Agent a, long period) { super(a, period); }
