@@ -5,7 +5,7 @@ public class Fire {
     private int id;
     private int coordX, coordY;
     private int intensity;
-    private boolean active;
+    private boolean active, atended;
 
     public Fire(int id, int coordX, int coordY) {
         this.id = id;
@@ -13,6 +13,7 @@ public class Fire {
         this.coordY = coordY;
         this.intensity = 1;
         this.active = true;
+        this.atended = false;
     }
 
     public void increaseFireIntensity() {
@@ -77,5 +78,13 @@ public class Fire {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public boolean isAtended() {
+        return atended;
+    }
+
+    public void atended() {
+        this.atended = true;
     }
 }

@@ -18,7 +18,7 @@ public class AgenteIncendiario extends Agent {
         super.setup();
 
         // new fire every 5 seconds
-        this.addBehaviour(new Incendiar(this, 5000));
+        this.addBehaviour(new Incendiar(this, 1000));
     }
 
     protected void takeDown() {

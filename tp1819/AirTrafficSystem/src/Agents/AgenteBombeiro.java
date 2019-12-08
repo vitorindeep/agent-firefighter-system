@@ -1,5 +1,6 @@
 package Agents;
 
+import Components.Bombeiro;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
@@ -12,17 +13,18 @@ import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Random;
 
 public class AgenteBombeiro extends Agent {
-    private static final int SPEED_FACTOR = 1, FUEL_FACTOR = 10;
+    private static final int SPEED_FACTOR = 1, FUEL_FACTOR = 5;
     private String id;
     private int idFire, type;
     private int x, y;
     private int xDestination, yDestination;
     private int direcaoX = 0, direcaoY = 0;
     private int velocidadeMax, fuel, fuelMax, water, waterMax;
-    private boolean movingToFire, fightingFire, replenishment;
+    private boolean movingToFire, fightingFire, replenishment, fuelReplenishmentActive, waterReplenishmentActive;
     // zonas de abastecimento e água
     private ArrayList<String> gasStations;
     private ArrayList<String> waterZones;
@@ -40,7 +42,7 @@ public class AgenteBombeiro extends Agent {
         // estado inicial
         movingToFire = false;
         fightingFire = false;
-        replenishment = false;
+        replenishment = fuelReplenishmentActive = waterReplenishmentActive = false;
 
         // ler argumentos para criar novo AgenteBombeiro
         Object[] args = getArguments();
@@ -48,14 +50,6 @@ public class AgenteBombeiro extends Agent {
         type = (Integer) args[1]; // tipo de bombeiro (1-aeronave, 2-drone, 3-camioes)
         gasStations = (ArrayList<String>) args[2];
         waterZones = (ArrayList<String>) args[3];
-        /*
-        for (String coords : gasStations) {
-            System.out.println("Posto de abastecimento em: " + coords);
-        }
-        for (String coords : waterZones) {
-            System.out.println("Posto de água em: " + coords);
-        }
-        */
 
         // adapt velocidadeMax according to vehicle type
         switch(type) {
@@ -224,36 +218,23 @@ public class AgenteBombeiro extends Agent {
                 else if (msg.getPerformative() == ACLMessage.CONFIRM) {
                     fightingFire = false;
                     System.out.println("$ Bombeiro " + id + ": Combate a incêndio " + idFire + " terminado.");
-                    // verificar necessidade de reabastecimento
-                    // TODO
+                    // verificar necessidade de reabastecimento de combustível
+                    if (needsFuel()) {
+                        System.out.println("$ Bombeiro " + id + ": Necessita de combustível.");
+                        replenishment = true;
+                        setFuelStationDestination();
+                    }
+                    // ou se apenas necessita de água
+                    else if (needsWater()) {
+                        System.out.println("$ Bombeiro " + id + ": Necessita de água apenas.");
+                        replenishment = true;
+                        setWaterZoneDestination();
+                    }
                 }
             } else {
                 block();
             }
 
-        }
-
-        private void adaptDirectionOfMovement(int xFire, int yFire) {
-            // x
-            if (xFire > x) {
-                direcaoX = 1;
-            }
-            else if (xFire < x) {
-                direcaoX = -1;
-            }
-            else {
-                direcaoX = 0;
-            }
-            // y
-            if (yFire > y) {
-                direcaoY = 1;
-            }
-            else if (yFire < y) {
-                direcaoY = -1;
-            }
-            else {
-                direcaoY = 0;
-            }
         }
     }
 
@@ -267,18 +248,6 @@ public class AgenteBombeiro extends Agent {
                 int newX = x+velocidadeMax*direcaoX;
                 int newY = y+velocidadeMax*direcaoY;
                 checkIfDestinationAchieved(newX, newY);
-                /*
-                System.out.println("Para Interface: id: " + id + ", " +
-                        "x: " + x + ", " +
-                        "y: " + y + ", " +
-                        "xDest: " + xDestination + ", " +
-                        "yDest: " + yDestination + ", " +
-                        "direcaoX: " + direcaoX + ", " +
-                        "direcaoY: " + direcaoY + ", " +
-                        "moving: " + movingToFire + ", " +
-                        "fighting: " + fightingFire + ", " +
-                        "replenishment: " + replenishment);
-                */
             }
         }
 
@@ -340,10 +309,31 @@ public class AgenteBombeiro extends Agent {
                     fightingFire = true;
                 }
                 // chegou ao abastecimento
-                else {
-                    replenishment = false;
-                    fuel = fuelMax;
-                    water = waterMax;
+                else if (replenishment) {
+                    // esta em busca de combustivel
+                    if (fuelReplenishmentActive) {
+                        System.out.println("$ Bombeiro " + id + ": Combustível ABASTECIDO.");
+                        fuelReplenishmentActive = false;
+                        fuel = fuelMax;
+                        // verificar se também é preciso água
+                        if (needsWater()) {
+                            System.out.println("$ Bombeiro " + id + ": Necessita de água, para além de combustível.");
+                            waterReplenishmentActive = true;
+                            replenishment = true;
+                            setWaterZoneDestination();
+                        }
+                        // se nao for preciso, ja nao esta mais em replenishment
+                        else {
+                            replenishment = false;
+                        }
+                    }
+                    // se busca por água
+                    else if (waterReplenishmentActive) {
+                        System.out.println("$ Bombeiro " + id + ": Água ABASTECIDA.");
+                        waterReplenishmentActive = false;
+                        water = waterMax;
+                        replenishment = false;
+                    }
                 }
             }
         }
@@ -379,6 +369,133 @@ public class AgenteBombeiro extends Agent {
                     fe.printStackTrace();
                 }
             }
+        }
+    }
+
+    private boolean needsWater() {
+
+        // water replanishment differs from vehicle type
+        switch(type) {
+            case 1: // aeronave apenas necessita quando está sem água porque abastecer é dispendioso e demora tempo
+                return (water == 0);
+            case 2: // drone apenas necessita quando está sem água porque tem muito pouca capacidade
+                return (water == 0);
+            case 3: // camioes reabastecem quando têm 20% da água para nunca andarem vazios
+                return (water == 0.2 * waterMax);
+            default:
+                System.out.println("$ Bombeiro " + id + ": ABASECIMENTO IMPOSSÍVEL.");
+                takeDown();
+                return false;
+        }
+    }
+
+    private boolean needsFuel() {
+
+        // fuel replanishment differs from vehicle type
+        // max distance from gasStation is 20 steps at speed 1
+        switch(type) {
+            // aeronave tem speed=2, portanto leva 10steps=10unidades de combustível a chegar ao reabastecimento, no max
+            // o seu maxFuel = 100, pelo que precisa de garantir sempre 10% (logo colocamos 20% para margem após incêndio)
+            case 1:
+                return (fuel <= 0.2 * fuelMax);
+            // drone tem speed=4, portanto leva 5steps=5unidades de combustível a chegar ao reabastecimento, no max
+            // o seu maxFuel = 25, pelo que precisa de garantir sempre 20% (logo colocamos 40% para margem após incêndio)
+            case 2:
+                return (fuel <= 0.4 * fuelMax);
+            // camiao tem speed=1, portanto leva 20steps=20unidades de combustível a chegar ao reabastecimento, no max
+            // o seu maxFuel = 50, pelo que precisa de garantir sempre 40% (logo colocamos 60% para margem após incêndio)
+            case 3:
+                return (fuel <= 0.6 * fuelMax);
+            default:
+                System.out.println("$ Bombeiro " + id + ": ABASECIMENTO IMPOSSÍVEL.");
+                takeDown();
+                return false;
+        }
+    }
+
+    // checks the closest gasStation and set destination x and y
+    // in Movimento() we check when we arrive and change what we need accordingly
+    private void setFuelStationDestination() {
+        fuelReplenishmentActive = true;
+
+        double minDistance = 99999;
+        int xGas, yGas, xMin = 0, yMin = 0;
+
+        for (String entry : gasStations) {
+            String[] coords = entry.split(";");
+            xGas = Integer.valueOf(coords[0]);
+            yGas = Integer.valueOf(coords[1]);
+
+            // calcular distancia entre bombeiro e posto de combustível
+            double distPercorrer = Math.sqrt(((Math.pow((xGas - x), 2)) + (Math.pow((yGas - y), 2))));
+
+            // verificar se é a mais pequena até ao momento
+            if (distPercorrer < minDistance) {
+                minDistance = distPercorrer;
+                // definir novo destino
+                xMin = xGas;
+                yMin = yGas;
+            }
+        }
+        xDestination = xMin;
+        yDestination = yMin;
+
+        // definir direção no eixo para abastecimento
+        adaptDirectionOfMovement(xDestination, yDestination);
+    }
+
+    // checks the closest water zone and set destination x and y
+    // in Movimento() we check when we arrive and change what we need accordingly
+    private void setWaterZoneDestination() {
+        waterReplenishmentActive = true;
+
+        double minDistance = 99999;
+        int xWater, yWater, xMin = 0, yMin = 0;
+
+        for (String entry : waterZones) {
+            String[] coords = entry.split(";");
+            xWater = Integer.valueOf(coords[0]);
+            yWater = Integer.valueOf(coords[1]);
+
+            // calcular distancia entre bombeiro e posto de combustível
+            double distPercorrer = Math.sqrt(((Math.pow((xWater - x), 2)) + (Math.pow((yWater - y), 2))));
+
+            // verificar se é a mais pequena até ao momento
+            if (distPercorrer < minDistance) {
+                minDistance = distPercorrer;
+                // definir novo destino
+                xMin = xWater;
+                yMin = yWater;
+            }
+        }
+
+        xDestination = xMin;
+        yDestination = yMin;
+
+        // definir direção no eixo para abastecimento
+        adaptDirectionOfMovement(xDestination, yDestination);
+    }
+
+    private void adaptDirectionOfMovement(int xFire, int yFire) {
+        // x
+        if (xFire > x) {
+            direcaoX = 1;
+        }
+        else if (xFire < x) {
+            direcaoX = -1;
+        }
+        else {
+            direcaoX = 0;
+        }
+        // y
+        if (yFire > y) {
+            direcaoY = 1;
+        }
+        else if (yFire < y) {
+            direcaoY = -1;
+        }
+        else {
+            direcaoY = 0;
         }
     }
 }

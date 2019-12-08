@@ -41,9 +41,9 @@ public class DroneAgent {
         else
             this.x = x * 32;
             this.y = y * 32;
-        if (water>0)
+        if (water>=0)
             this.water = water;
-        if (fuel>0)
+        if (fuel>=0)
             this.fuel = fuel;
     }
 

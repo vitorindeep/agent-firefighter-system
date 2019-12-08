@@ -116,7 +116,7 @@ public class AgenteInterface extends Agent {
             fe.printStackTrace();
         }
         addBehaviour(new ReceberInfoIncendio());
-        addBehaviour(new DesenhaGrafico(this, 1000));
+        addBehaviour(new DesenhaGrafico(this, 500));
     }
 
     // receber pedidos para lutar por incêndio e quando acaba
@@ -150,9 +150,6 @@ public class AgenteInterface extends Agent {
                 // recebe as coordenadas e informações de água e combustível
                 else if (msg.getPerformative() == ACLMessage.INFORM) {
                     String[] coordsAviao = msg.getContent().split(";");
-                    // pegar no nome do aviao e substituir os A. AA1 -> 1
-                    //int pos = Integer.parseInt(coordsAviao[0].replace("A", ""));
-
                     String idAgente = coordsAviao[0];
                     float aviaoCoordX = Float.parseFloat(coordsAviao[1]);
                     float aviaoCoordY = Float.parseFloat(coordsAviao[2]);

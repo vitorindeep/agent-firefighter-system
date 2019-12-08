@@ -20,6 +20,9 @@ public class AgenteCentral extends Agent {
 	// listar em relação à lista de informação de aviões
 	private DFAgentDescription dfdEstacoes, dfdBombeiros, dfdInterface;
 	private ServiceDescription sdEstacoes, sdBombeiros, sdInterface;
+	// control
+	private HashMap<Integer, Fire> fires = new HashMap<Integer, Fire>(); // all the fires
+	private HashMap<String, Bombeiro> bombeiros = new HashMap<String, Bombeiro>(); // all the bombeiros agents
 
 	protected void setup() {
 		System.out.println("$ Starting: Estação");
@@ -47,6 +50,8 @@ public class AgenteCentral extends Agent {
 
 		// listen to incendiario
 		this.addBehaviour(new Receiver());
+		// check if any non atended fire exhists every 5 seconds
+		this.addBehaviour(new Oracle(this, 5000));
 	}
 
 	protected void takeDown() {
@@ -59,10 +64,67 @@ public class AgenteCentral extends Agent {
 		super.takeDown();
 	}
 
+	// watch if any fires are not treated
+	private class Oracle extends TickerBehaviour {
+
+		public Oracle(Agent a, long period) {
+			super(a, period);
+		}
+
+		@Override
+		protected void onTick() {
+			for (Map.Entry<Integer, Fire> entry : fires.entrySet()) {
+				Fire entryFire = entry.getValue();
+				Integer entryKey = entry.getKey();
+				// if fire is not atended
+				// because there was no firefighter available at the time
+				if (!entryFire.isAtended()) {
+					// aumentar intensidade do fogo porque demorou a ser apagado
+					entryFire.increaseFireIntensity();
+					// verificar o bombeiro mais próximo
+					Bombeiro bombeiroDisponivel = getNearestAvailableFirefighter(entryFire.getCoordX(), entryFire.getCoordY());
+					// se existe disponível, encaminhá-lo para incendio
+					if (bombeiroDisponivel != null) {
+						System.out.println("$ Estação: FOGO AINDA NÃO ATENDIDO. Bombeiro " + bombeiroDisponivel.getId() + " disponível.");
+						// colocar fogo como atendido
+						fires.get(entryKey).atended();
+						// definições para procura de bombeiro
+						dfdBombeiros = new DFAgentDescription();
+						sdBombeiros = new ServiceDescription();
+						sdBombeiros.setType("Bombeiro");
+						sdBombeiros.setName(bombeiroDisponivel.getId()); // procura por o id do Bombeiro
+						dfdBombeiros.addServices(sdBombeiros);
+						DFAgentDescription[] dfBombeiros;
+						try {
+							// obter bombeiro em específico (só deve encontrar 1)
+							dfBombeiros = DFService.search(this.myAgent, dfdBombeiros);
+							if (dfBombeiros.length > 0) {
+								for (int i = 0; i < dfBombeiros.length; ++i) {
+									DFAgentDescription dfd = dfBombeiros[i];
+									AID bombeiro = dfd.getName();
+									ACLMessage newMsg = new ACLMessage(ACLMessage.CFP);
+									newMsg.addReceiver(bombeiro);
+									newMsg.setContent(entryKey + ";" + entryFire.getCoordX() + ";" + entryFire.getCoordY());
+									send(newMsg);
+								}
+
+							}
+						} catch (FIPAException e) {
+							e.printStackTrace();
+						}
+					}
+					else {
+						System.out.println("$ Estação: Nenhum bombeiro disponível para o combate ao fogo.");
+					}
+				}
+			}
+		}
+
+	}
+
+	// receive and treat infos
 	private class Receiver extends CyclicBehaviour {
 		private int fireCount = 0; // count the number of fires solved
-		private HashMap<Integer, Fire> fires = new HashMap<Integer, Fire>(); // all the fires
-		private HashMap<String, Bombeiro> bombeiros = new HashMap<String, Bombeiro>(); // all the bombeiros agents
 
 		// JESS
 		private Rete engine;
@@ -101,7 +163,6 @@ public class AgenteCentral extends Agent {
 					int xFire = Integer.parseInt(coordinates[0]);
 					int yFire = Integer.parseInt(coordinates[1]);
 					fires.put(fireCount, new Fire(fireCount, xFire, yFire));
-					Fire newFire = new Fire(fireCount, xFire, yFire);
 
 					// comunicar ao Agente Interface
 					try {
@@ -125,6 +186,8 @@ public class AgenteCentral extends Agent {
 					// se existe disponível, encaminhá-lo para incendio
 					if (bombeiroDisponivel != null) {
 						System.out.println("$ Estação: Bombeiro " + bombeiroDisponivel.getId() + " disponível.");
+						// colocar fogo como atendido
+						fires.get(fireCount).atended();
 						// definições para procura de bombeiro
 						dfdBombeiros = new DFAgentDescription();
 						sdBombeiros = new ServiceDescription();
@@ -162,7 +225,7 @@ public class AgenteCentral extends Agent {
                                 "(intensity 1) " +
                                 "(active TRUE)" +
                                 "))");
-                        engine.executeCommand("(facts)");
+                        //engine.executeCommand("(facts)");
                         //engine.executeCommand("(call ?fires put " + fireCount + " ?newFire)");
                         //engine.executeCommand("(call ?fires get " + fireCount + ")");
 
@@ -257,30 +320,29 @@ public class AgenteCentral extends Agent {
 				block();
 			}
 		}
+	}
 
-		private Bombeiro getNearestAvailableFirefighter(int xFire, int yFire) {
-			double minDistance = 99999;
-			Bombeiro b = null;
+	private Bombeiro getNearestAvailableFirefighter(int xFire, int yFire) {
+		double minDistance = 99999;
+		Bombeiro b = null;
 
-			for (Map.Entry<String, Bombeiro> entry : bombeiros.entrySet()) {
-				Bombeiro bombeiro = entry.getValue();
-				// verificar se está disponível para combater fogo
-				if (bombeiro.isAvailable()) {
-					int xBombeiro = bombeiro.getX();
-					int yBombeiro = bombeiro.getY();
-					// calcular distancia entre bombeiro e fogo a combater
-					double distPercorrer = Math.sqrt(((Math.pow((xFire - xBombeiro), 2)) + (Math.pow((yFire - yBombeiro), 2))));
-					// verificar se é a mais pequena até ao momento
-					if (distPercorrer < minDistance) {
-						minDistance = distPercorrer;
-						b = bombeiro;
-					}
+		for (Map.Entry<String, Bombeiro> entry : bombeiros.entrySet()) {
+			Bombeiro bombeiro = entry.getValue();
+			// verificar se está disponível para combater fogo
+			if (bombeiro.isAvailable()) {
+				int xBombeiro = bombeiro.getX();
+				int yBombeiro = bombeiro.getY();
+				// calcular distancia entre bombeiro e fogo a combater
+				double distPercorrer = Math.sqrt(((Math.pow((xFire - xBombeiro), 2)) + (Math.pow((yFire - yBombeiro), 2))));
+				// verificar se é a mais pequena até ao momento
+				if (distPercorrer < minDistance) {
+					minDistance = distPercorrer;
+					b = bombeiro;
 				}
 			}
-
-			return b;
 		}
 
+		return b;
 	}
 
 }
